@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Allergietagebuch</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background: #f0f4f8;
+            overscroll-behavior-y: none;
+        }
+
+        /* ── Weather Header ─────────────────────── */
+        .weather-header {
+            background: linear-gradient(145deg, #1565c0 0%, #0288d1 60%, #00acc1 100%);
+            color: white;
+        }
+
+        .weather-tile {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            padding: 0.65rem 0.5rem;
+            text-align: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .weather-tile .icon  { font-size: 1.6rem; line-height: 1; }
+        .weather-tile .lbl   { font-size: 0.65rem; opacity: 0.8; margin: 0.2rem 0; }
+        .weather-tile .val   { font-size: 0.85rem; font-weight: 700; }
+
+        /* ── Section Headers ─────────────────────── */
+        .section-bar {
+            background: white;
+            border-bottom: 2px solid #e3e8ef;
+            padding: 0.9rem 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .section-bar h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+            color: #1a237e;
+        }
+
+        /* ── Person Buttons ──────────────────────── */
+        .person-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .person-btn {
+            min-height: 42vw;
+            border-radius: 18px;
+            border-width: 2.5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .person-btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-info) {
+            background: white;
+        }
+
+        .person-btn .person-icon { font-size: 2.8rem; line-height: 1; }
+
+        .person-entry-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            opacity: 0.85;
+        }
+
+        .person-btn.active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+        }
+
+        /* ── Symptom Buttons ─────────────────────── */
+        .symptom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 10px 12px 20px;
+        }
+
+        .symptom-btn {
+            min-height: 90px;
+            border-radius: 14px;
+            border-width: 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: transform 0.12s ease;
+        }
+
+        .symptom-btn:not(.btn-danger) {
+            background: white;
+        }
+
+        .symptom-btn .symptom-icon { font-size: 1.9rem; line-height: 1; }
+
+        .symptom-btn.active {
+            transform: scale(0.95);
+        }
+
+        .symptom-btn:disabled {
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        /* ── Save Badge ──────────────────────────── */
+        .save-badge {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1060;
+            background: #2e7d32;
+            color: white;
+            border-radius: 50px;
+            padding: 0.45rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+        }
+
+        .save-badge.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── No-person hint ──────────────────────── */
+        .no-person-hint {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #90a4ae;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     WEATHER HEADER
+══════════════════════════════════════════════ -->
+<header class="weather-header px-3 pt-4 pb-3">
+    <div class="d-flex align-items-center gap-2 mb-1">
+        <span style="font-size:2rem" th:text="${weatherCondition.emoji}">☀️</span>
+        <div>
+            <div class="fw-bold fs-5 lh-1">Allergietagebuch</div>
+            <div style="font-size:0.8rem;opacity:0.85" th:text="${date}">Dienstag, 27. Mai 2025</div>
+        </div>
+    </div>
+    <div class="mb-3" style="font-size:0.9rem;opacity:0.9" th:text="${weatherCondition.label}">Teilweise bewölkt</div>
+
+    <!-- 6 Weather Tiles -->
+    <div class="row row-cols-3 g-2 mb-3">
+        <div class="col">
+            <div class="weather-tile">
+                <div class="icon">🌡️</div>
+                <div class="lbl">Temperatur</div>
+                <div class="val">
+                    <span th:text="${temperatureMax}">–</span>°
+                    <span style="opacity:0.7">/ <span th:text="${temperatureMin}">–</span>°</span>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="weather-tile">
+                <div class="icon">🌧️</div>
+                <div class="lbl">Niederschlag</div>
+                <div class="val" th:text="${precipitationSum}">–</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="weather-tile">
+                <div class="icon">💨</div>
+                <div class="lbl">Wind</div>
+                <div class="val" th:text="${windspeedMax}">–</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="weather-tile">
+                <div class="icon" th:text="${uvLevel.emoji}">🟡</div>
+                <div class="lbl">UV-Index</div>
+                <div class="val" th:text="${uvIndexMax}">–</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="weather-tile">
+                <div class="icon">🌅</div>
+                <div class="lbl">Aufgang</div>
+                <div class="val" th:text="${sunrise}">–</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="weather-tile">
+                <div class="icon">🌇</div>
+                <div class="lbl">Untergang</div>
+                <div class="val" th:text="${sunset}">–</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pollen Badges -->
+    <div>
+        <div style="font-size:0.72rem;opacity:0.8;margin-bottom:0.35rem">🌿 Pollenflug</div>
+        <div class="d-flex flex-wrap gap-1">
+            <span th:each="p : ${pollenEntries}"
+                  class="badge rounded-pill"
+                  th:classappend="${p['badgeClass']}"
+                  th:text="${p['emoji'] + ' ' + p['name']}">✅ Birke</span>
+        </div>
+    </div>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 1 – PERSON SELECTION
+══════════════════════════════════════════════ -->
+<section id="person-section">
+    <div class="section-bar">
+        <h2><i class="bi bi-people-fill me-2 text-primary"></i>Wer hat Symptome?</h2>
+    </div>
+    <div class="person-grid">
+        <button type="button"
+                class="person-btn"
+                th:each="person : ${persons}"
+                th:classappend="${person.outlineColorClass()}"
+                th:attr="data-person=${person.name},data-color-class=${person.colorClass()}"
+                th:id="'person-' + ${person.name}">
+            <span class="person-icon" th:text="${person.emoji()}"></span>
+            <span th:text="${person.name}">Papa</span>
+            <span class="person-entry-badge" style="display:none">&#10003; erfasst</span>
+        </button>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 2 – SYMPTOM SELECTION
+══════════════════════════════════════════════ -->
+<section id="symptom-section">
+    <div class="section-bar">
+        <h2><i class="bi bi-clipboard2-pulse me-2 text-danger"></i>Welche Symptome?</h2>
+    </div>
+
+    <div class="no-person-hint" id="noPersonHint">
+        <i class="bi bi-arrow-up-circle" style="font-size:2rem"></i>
+        <p class="mt-2 mb-0" style="font-size:0.9rem">Bitte zuerst eine Person auswählen</p>
+    </div>
+
+    <div class="symptom-grid" id="symptomGrid">
+        <button type="button"
+                class="symptom-btn btn-outline-danger"
+                th:each="symptom : ${symptoms}"
+                th:attr="data-symptom=${symptom.code}"
+                th:id="'symptom-' + ${symptom.code}"
+                disabled>
+            <i class="bi symptom-icon" th:classappend="${symptom.icon}"></i>
+            <span th:text="${symptom.label}">Niesen</span>
+        </button>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════ -->
+<footer class="text-center text-muted py-4" style="font-size:0.75rem">
+    <i class="bi bi-cloud-check me-1"></i>Wetterdaten: Open-Meteo.com
+</footer>
+
+<!-- ══════════════════════════════════════════════
+     SAVE INDICATOR
+══════════════════════════════════════════════ -->
+<div class="save-badge" id="saveBadge">
+    <i class="bi bi-check2-circle me-1"></i>Gespeichert
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const REPORT_ID = /*[[${reportId}]]*/ '';
+    const EXISTING = JSON.parse(/*[[${existingEntriesJson}]]*/ '{}');
+
+    let selectedPerson = null;
+    let selectedSymptoms = new Set();
+    let saveTimer = null;
+    let badgeTimer = null;
+
+    const personBtns   = document.querySelectorAll('.person-btn');
+    const symptomBtns  = document.querySelectorAll('.symptom-btn');
+    const noPersonHint = document.getElementById('noPersonHint');
+    const saveBadge    = document.getElementById('saveBadge');
+
+    // ── Init: mark persons that already have an entry ──
+    personBtns.forEach(btn => {
+        const saved = EXISTING[btn.dataset.person];
+        if (saved && saved.some(s => s.trim() !== '')) {
+            btn.querySelector('.person-entry-badge').style.display = '';
+        }
+    });
+
+    // ── Person helpers ─────────────────────────
+    function outlineClass(colorClass) {
+        return colorClass.replace('btn-', 'btn-outline-');
+    }
+
+    function activatePerson(btn) {
+        const cc = btn.dataset.colorClass;
+        btn.classList.remove(outlineClass(cc));
+        btn.classList.add(cc, 'active');
+    }
+
+    function deactivatePerson(btn) {
+        const cc = btn.dataset.colorClass;
+        btn.classList.remove(cc, 'active');
+        btn.classList.add(outlineClass(cc));
+    }
+
+    // ── Person click ───────────────────────────
+    personBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            personBtns.forEach(deactivatePerson);
+            activatePerson(btn);
+            selectedPerson = btn.dataset.person;
+
+            const saved = EXISTING[selectedPerson] || [];
+            selectedSymptoms = new Set(saved.filter(s => s.trim() !== ''));
+
+            enableSymptomGrid();
+            refreshSymptomUI();
+
+            document.getElementById('symptom-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            if (selectedSymptoms.size > 0) scheduleSave();
+        });
+    });
+
+    // ── Symptom click ──────────────────────────
+    symptomBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!selectedPerson) return;
+            const code = btn.dataset.symptom;
+            if (selectedSymptoms.has(code)) {
+                selectedSymptoms.delete(code);
+            } else {
+                selectedSymptoms.add(code);
+            }
+            refreshSymptomUI();
+            if (selectedSymptoms.size > 0) scheduleSave();
+        });
+    });
+
+    // ── Helpers ────────────────────────────────
+    function enableSymptomGrid() {
+        noPersonHint.style.display = 'none';
+        symptomBtns.forEach(b => b.removeAttribute('disabled'));
+    }
+
+    function refreshSymptomUI() {
+        symptomBtns.forEach(btn => {
+            const selected = selectedSymptoms.has(btn.dataset.symptom);
+            btn.classList.toggle('btn-danger', selected);
+            btn.classList.toggle('btn-outline-danger', !selected);
+            btn.classList.toggle('active', selected);
+        });
+    }
+
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(doSave, 600);
+    }
+
+    async function doSave() {
+        if (!selectedPerson || selectedSymptoms.size === 0) return;
+        try {
+            const res = await fetch(`/api/report/${REPORT_ID}/entry`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ personName: selectedPerson, symptoms: [...selectedSymptoms] })
+            });
+            if (res.ok) {
+                EXISTING[selectedPerson] = [...selectedSymptoms];
+                const badge = document.querySelector(`#person-${selectedPerson} .person-entry-badge`);
+                if (badge) badge.style.display = '';
+                showSaveBadge();
+            }
+        } catch (e) {
+            console.error('Speichern fehlgeschlagen', e);
+        }
+    }
+
+    function showSaveBadge() {
+        clearTimeout(badgeTimer);
+        saveBadge.classList.add('show');
+        badgeTimer = setTimeout(() => saveBadge.classList.remove('show'), 2200);
+    }
+    /*]]>*/
+</script>
+</body>
+</html>

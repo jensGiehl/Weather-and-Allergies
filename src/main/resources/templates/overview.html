@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allergietagebuch – Übersicht</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/datatables.net-bs5/css/dataTables.bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css}">
+    <style>
+        body { background: #f0f4f8; }
+
+        .app-header {
+            background: linear-gradient(145deg, #1565c0 0%, #0288d1 60%, #00acc1 100%);
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.18);
+            border-radius: 14px;
+            padding: 0.9rem 1.4rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .stat-card .number { font-size: 2rem; font-weight: 800; line-height: 1; }
+        .stat-card .label  { font-size: 0.75rem; opacity: 0.8; margin-top: 0.2rem; }
+
+        /* DataTables overrides */
+        div.dt-container .dt-search input {
+            border-radius: 8px;
+            border: 1.5px solid #dee2e6;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.875rem;
+        }
+
+        div.dt-container .dt-search input:focus {
+            border-color: #0d6efd;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(13,110,253,.15);
+        }
+
+        table.dataTable thead th {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #6c757d;
+            border-bottom: 2px solid #dee2e6 !important;
+            white-space: nowrap;
+        }
+
+        .symptom-badge {
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 0.25rem 0.55rem;
+            border-radius: 50px;
+            white-space: nowrap;
+        }
+
+        .person-pill {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.3rem 0.7rem;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .date-cell { white-space: nowrap; }
+        .date-cell .weekday { color: #6c757d; font-size: 0.75rem; }
+        .date-cell .date    { font-weight: 600; font-size: 0.9rem; }
+
+        .temp-cell { white-space: nowrap; font-size: 0.85rem; }
+
+        .symptom-list { display: flex; flex-wrap: wrap; gap: 4px; min-width: 200px; }
+
+        .weather-cell { white-space: nowrap; font-size: 0.9rem; }
+        .weather-label { font-size: 0.72rem; color: #6c757d; }
+
+        .empty-row td { opacity: 0.55; }
+
+        /* Sort icons – force block layout so position:absolute children work */
+        table.dataTable thead span.dt-column-order {
+            display: inline-block !important;
+            position: relative !important;
+            width: 12px !important;
+            height: 20px !important;
+            vertical-align: middle;
+        }
+        table.dataTable thead span.dt-column-order::before,
+        table.dataTable thead span.dt-column-order::after {
+            position: absolute !important;
+            display: block !important;
+            left: 0;
+            font-size: 0.75em;
+            line-height: 9px;
+            opacity: 0.3;
+        }
+        table.dataTable thead span.dt-column-order::before { content: "\25B2"; bottom: 50%; }
+        table.dataTable thead span.dt-column-order::after  { content: "\25BC"; top:    50%; }
+        table.dataTable thead th.dt-ordering-asc  span.dt-column-order::before { opacity: 0.9; }
+        table.dataTable thead th.dt-ordering-desc span.dt-column-order::after  { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════ -->
+<header class="app-header text-white py-4 mb-4">
+    <div class="container-xl px-4">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-journal-medical fs-3"></i>
+            <div>
+                <h1 class="fs-4 fw-bold mb-0">Allergietagebuch</h1>
+                <div style="font-size:0.78rem;opacity:0.8">Symptom-Übersicht</div>
+            </div>
+        </div>
+        <div class="d-flex gap-3 flex-wrap">
+            <div class="stat-card">
+                <div class="number" th:text="${reportCount}">0</div>
+                <div class="label"><i class="bi bi-calendar3 me-1"></i>Tage erfasst</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" th:text="${entryCount}">0</div>
+                <div class="label"><i class="bi bi-clipboard2-pulse me-1"></i>Symptomeinträge</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     TABLE CARD
+══════════════════════════════════════════ -->
+<div class="container-xl px-4 pb-5">
+    <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="overviewTable"
+                       class="table table-hover align-middle mb-0"
+                       style="width:100%">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="bi bi-calendar3 me-1"></i>Datum</th>
+                            <th><i class="bi bi-cloud-sun me-1"></i>Wetter</th>
+                            <th><i class="bi bi-thermometer-half me-1"></i>Temp.</th>
+                            <th><i class="bi bi-person me-1"></i>Person</th>
+                            <th><i class="bi bi-clipboard2-pulse me-1"></i>Symptome</th>
+                            <th><i class="bi bi-flower1 me-1"></i>Pollenflug</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="row : ${rows}"
+                            th:classappend="${!row.hasEntry} ? 'empty-row' : ''">
+
+                            <!-- Datum -->
+                            <td class="date-cell" th:attr="data-order=${row.reportDate}">
+                                <div class="date" th:text="${row.dateFormatted}">Mo, 26.05.2026</div>
+                            </td>
+
+                            <!-- Wetter -->
+                            <td class="weather-cell">
+                                <span class="me-1" th:text="${row.weatherEmoji}">⛅</span>
+                                <span class="weather-label" th:text="${row.weatherLabel}">Bewölkt</span>
+                            </td>
+
+                            <!-- Temperatur -->
+                            <td class="temp-cell text-nowrap">
+                                <span class="text-danger fw-semibold">↑</span>
+                                <span th:text="${row.tempMax}">–</span>°
+                                <span class="text-primary fw-semibold ms-1">↓</span>
+                                <span th:text="${row.tempMin}">–</span>°
+                            </td>
+
+                            <!-- Person -->
+                            <td>
+                                <span th:if="${row.hasEntry}"
+                                      class="person-pill"
+                                      th:classappend="${row.personBadgeClass}">
+                                    <span th:text="${row.personEmoji}">👤</span>
+                                    <span th:text="${row.personName}">Papa</span>
+                                </span>
+                                <span th:unless="${row.hasEntry}" class="text-muted fst-italic" style="font-size:0.8rem">
+                                    Keine Einträge
+                                </span>
+                            </td>
+
+                            <!-- Symptome -->
+                            <td>
+                                <div class="symptom-list" th:if="${row.hasEntry and !row.symptoms.isEmpty()}">
+                                    <span th:each="sym : ${row.symptoms}"
+                                          class="symptom-badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+                                        <i class="bi me-1" th:classappend="${sym.icon}"></i>
+                                        <span th:text="${sym.label}">Niesen</span>
+                                    </span>
+                                </div>
+                                <span th:if="${row.hasEntry and row.symptoms.isEmpty()}"
+                                      class="text-muted fst-italic" style="font-size:0.8rem">–</span>
+                                <span th:unless="${row.hasEntry}" class="text-muted">–</span>
+                            </td>
+
+                            <!-- Pollenflug -->
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span th:each="p : ${row.pollenEntries}"
+                                          class="badge rounded-pill"
+                                          th:classappend="${p.badgeClass}"
+                                          th:text="${p.emoji + ' ' + p.name}">✅ Birke</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/webjars/jquery/3.7.1/jquery.min.js}"></script>
+<script th:src="@{/webjars/datatables.net/js/dataTables.min.js}"></script>
+<script th:src="@{/webjars/datatables.net-bs5/js/dataTables.bootstrap5.min.js}"></script>
+<script th:src="@{/webjars/datatables.net-responsive/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/webjars/datatables.net-responsive-bs5/js/responsive.bootstrap5.min.js}"></script>
+<script th:inline="none">
+    new DataTable('#overviewTable', {
+        responsive: true,
+        order:      [[0, 'desc']],
+        paging:     false,
+        info:       false,
+        language: {
+            search:            'Suche:',
+            searchPlaceholder: 'Datum, Person, Symptom …',
+            zeroRecords:       'Keine passenden Einträge gefunden.',
+            emptyTable:        'Noch keine Daten vorhanden.'
+        }
+    });
+</script>
+</body>
+</html>

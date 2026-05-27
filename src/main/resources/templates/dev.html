@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Tools – Local</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <style>
+        body { background: #f0f4f8; }
+        .app-header { background: linear-gradient(145deg, #5c3317 0%, #9c4a1a 60%, #c06020 100%); }
+        .result-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6c757d; }
+        .result-value { font-size: 1rem; font-weight: 600; }
+        .id-box { font-family: monospace; font-size: 0.85rem; background: #f8f9fa; border-radius: 8px; padding: 0.5rem 0.75rem; border: 1px solid #dee2e6; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+<header class="app-header text-white py-4 mb-4">
+    <div class="container px-4">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-wrench-adjustable-circle fs-3"></i>
+            <div>
+                <h1 class="fs-4 fw-bold mb-0">Dev Tools</h1>
+                <div style="font-size:0.78rem;opacity:0.8">Nur im Profil <code class="text-white-50">local</code> aktiv</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container px-4 pb-5" style="max-width: 720px;">
+
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 16px;">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-1"><i class="bi bi-cloud-download me-2 text-primary"></i>APIs abrufen &amp; DB-Eintrag anlegen</h5>
+            <p class="text-muted mb-3" style="font-size:0.9rem;">
+                Ruft Wetter- und Pollendaten ab, legt einen DB-Eintrag für heute an und zeigt die Ergebnisse direkt an.
+            </p>
+            <button id="triggerBtn" type="button" class="btn btn-primary">
+                <i class="bi bi-play-fill me-1"></i>Jetzt abrufen
+            </button>
+        </div>
+    </div>
+
+    <div id="errorAlert" class="alert alert-danger d-none d-flex align-items-center gap-2 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span id="errorMsg"></span>
+    </div>
+
+    <div id="results" class="d-none">
+
+        <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-muted mb-2"><i class="bi bi-key me-2"></i>Report-ID</h6>
+                <div class="id-box" id="resId"></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-muted mb-3"><i class="bi bi-cloud-sun me-2"></i>Wetter</h6>
+                <div class="row g-3">
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Datum</div>
+                        <div class="result-value" id="resDate"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Wetter-Code</div>
+                        <div class="result-value" id="resWeatherCode"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Temp. max / min</div>
+                        <div class="result-value" id="resTemp"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Niederschlag</div>
+                        <div class="result-value" id="resPrecip"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Wind max</div>
+                        <div class="result-value" id="resWind"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">UV-Index</div>
+                        <div class="result-value" id="resUv"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Sonnenaufgang</div>
+                        <div class="result-value" id="resSunrise"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Sonnenuntergang</div>
+                        <div class="result-value" id="resSunset"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-muted mb-3"><i class="bi bi-flower1 me-2"></i>Pollenflug</h6>
+                <div class="row g-3">
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Erle</div>
+                        <div class="result-value" id="resAlder"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Birke</div>
+                        <div class="result-value" id="resBirch"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Gras</div>
+                        <div class="result-value" id="resGrass"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Beifuß</div>
+                        <div class="result-value" id="resMugwort"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Olive</div>
+                        <div class="result-value" id="resOlive"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="result-label">Ambrosia</div>
+                        <div class="result-value" id="resRagweed"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex gap-2">
+        <a th:href="@{/}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-grid me-1"></i>Zur Übersicht
+        </a>
+        <a th:href="@{/h2-console}" class="btn btn-outline-secondary btn-sm" target="_blank">
+            <i class="bi bi-database me-1"></i>H2 Console
+        </a>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:inline="none">
+    const btn       = document.getElementById('triggerBtn');
+    const results   = document.getElementById('results');
+    const errorAlert = document.getElementById('errorAlert');
+    const errorMsg  = document.getElementById('errorMsg');
+
+    function val(v, suffix) {
+        return v != null ? v + (suffix || '') : '–';
+    }
+
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Wird abgerufen…';
+        results.classList.add('d-none');
+        errorAlert.classList.add('d-none');
+
+        try {
+            const res = await fetch('/dev/trigger', { method: 'POST' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const d = await res.json();
+
+            document.getElementById('resId').textContent          = d.id ?? '–';
+            document.getElementById('resDate').textContent        = d.reportDate ?? '–';
+            document.getElementById('resWeatherCode').textContent = val(d.weatherCode);
+            document.getElementById('resTemp').textContent        = val(d.temperatureMax, ' °C') + ' / ' + val(d.temperatureMin, ' °C');
+            document.getElementById('resPrecip').textContent      = val(d.precipitationSum, ' mm') + ' (' + val(d.precipitationProbability, ' %)');
+            document.getElementById('resWind').textContent        = val(d.windspeedMax, ' km/h');
+            document.getElementById('resUv').textContent          = val(d.uvIndexMax);
+            document.getElementById('resSunrise').textContent     = val(d.sunrise);
+            document.getElementById('resSunset').textContent      = val(d.sunset);
+            document.getElementById('resAlder').textContent       = val(d.alderPollen);
+            document.getElementById('resBirch').textContent       = val(d.birchPollen);
+            document.getElementById('resGrass').textContent       = val(d.grassPollen);
+            document.getElementById('resMugwort').textContent     = val(d.mugwortPollen);
+            document.getElementById('resOlive').textContent       = val(d.olivePollen);
+            document.getElementById('resRagweed').textContent     = val(d.ragweedPollen);
+
+            results.classList.remove('d-none');
+        } catch (e) {
+            errorMsg.textContent = 'Fehler beim Abruf: ' + e.message;
+            errorAlert.classList.remove('d-none');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Erneut abrufen';
+        }
+    });
+</script>
+</body>
+</html>

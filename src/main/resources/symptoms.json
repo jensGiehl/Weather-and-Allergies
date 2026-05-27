@@ -1,0 +1,14 @@
+[
+  {"code": "NIESEN",                    "label": "Niesen",                   "icon": "bi-wind"},
+  {"code": "JUCKENDE_AUGEN",            "label": "Juckende Augen",           "icon": "bi-eye-fill"},
+  {"code": "TRAENENDE_AUGEN",           "label": "Tränende Augen",           "icon": "bi-droplet-fill"},
+  {"code": "VERSTOPFTE_NASE",           "label": "Verstopfte Nase",          "icon": "bi-slash-circle-fill"},
+  {"code": "LAUFENDE_NASE",             "label": "Laufende Nase",            "icon": "bi-droplet"},
+  {"code": "HUSTENREIZ",                "label": "Hustenreiz",               "icon": "bi-soundwave"},
+  {"code": "ATEMNOT",                   "label": "Atemnot",                  "icon": "bi-lungs-fill"},
+  {"code": "HAUTAUSSCHLAG",             "label": "Hautausschlag",            "icon": "bi-bandaid-fill"},
+  {"code": "KOPFSCHMERZEN",             "label": "Kopfschmerzen",            "icon": "bi-emoji-dizzy-fill"},
+  {"code": "MUEDIGKEIT",                "label": "Müdigkeit",                "icon": "bi-moon-stars-fill"},
+  {"code": "HALSSCHMERZEN",             "label": "Halsschmerzen",            "icon": "bi-thermometer-half"},
+  {"code": "KRIBBELN_HAUT",             "label": "Kribbeln der Haut",        "icon": "bi-activity"}
+]

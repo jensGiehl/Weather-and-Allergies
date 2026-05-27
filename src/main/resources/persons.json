@@ -1,0 +1,6 @@
+[
+  {"name": "Papa",   "type": "MANN"},
+  {"name": "Mama",   "type": "FRAU"},
+  {"name": "Kind 1", "type": "JUNGE"},
+  {"name": "Kind 2", "type": "MAEDCHEN"}
+]
