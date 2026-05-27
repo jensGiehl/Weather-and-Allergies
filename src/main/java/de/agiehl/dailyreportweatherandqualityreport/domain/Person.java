@@ -11,24 +11,6 @@ public record Person(String name, PersonType type) {
         };
     }
 
-    public String colorClass() {
-        return switch (type) {
-            case MANN    -> "btn-primary";
-            case FRAU    -> "btn-danger";
-            case JUNGE   -> "btn-success";
-            case MAEDCHEN -> "btn-info";
-        };
-    }
-
-    public String outlineColorClass() {
-        return switch (type) {
-            case MANN    -> "btn-outline-primary";
-            case FRAU    -> "btn-outline-danger";
-            case JUNGE   -> "btn-outline-success";
-            case MAEDCHEN -> "btn-outline-info";
-        };
-    }
-
     public String badgeClass() {
         return switch (type) {
             case MANN    -> "bg-primary-subtle text-primary-emphasis border border-primary-subtle";

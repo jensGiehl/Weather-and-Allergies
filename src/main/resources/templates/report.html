@@ -71,10 +71,6 @@
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
-        .person-btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-info) {
-            background: white;
-        }
-
         .person-btn .person-icon { font-size: 2.8rem; line-height: 1; }
 
         .person-entry-badge {
@@ -86,6 +82,9 @@
         .person-btn.active {
             transform: scale(0.96);
             box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+            background-color: #1565c0;
+            border-color: #1565c0;
+            color: white;
         }
 
         /* ── Symptom Buttons ─────────────────────── */
@@ -110,14 +109,13 @@
             transition: transform 0.12s ease;
         }
 
-        .symptom-btn:not(.btn-danger) {
-            background: white;
-        }
-
         .symptom-btn .symptom-icon { font-size: 1.9rem; line-height: 1; }
 
         .symptom-btn.active {
             transform: scale(0.95);
+            background-color: #1565c0;
+            border-color: #1565c0;
+            color: white;
         }
 
         .symptom-btn:disabled {
@@ -242,10 +240,9 @@
     </div>
     <div class="person-grid">
         <button type="button"
-                class="person-btn"
+                class="person-btn btn-outline-primary"
                 th:each="person : ${persons}"
-                th:classappend="${person.outlineColorClass()}"
-                th:attr="data-person=${person.name},data-color-class=${person.colorClass()}"
+                th:attr="data-person=${person.name}"
                 th:id="'person-' + ${person.name}">
             <span class="person-icon" th:text="${person.emoji()}"></span>
             <span th:text="${person.name}">Papa</span>
@@ -269,7 +266,7 @@
 
     <div class="symptom-grid" id="symptomGrid">
         <button type="button"
-                class="symptom-btn btn-outline-danger"
+                class="symptom-btn btn-outline-primary"
                 th:each="symptom : ${symptoms}"
                 th:attr="data-symptom=${symptom.code}"
                 th:id="'symptom-' + ${symptom.code}"
@@ -319,20 +316,14 @@
     });
 
     // ── Person helpers ─────────────────────────
-    function outlineClass(colorClass) {
-        return colorClass.replace('btn-', 'btn-outline-');
-    }
-
     function activatePerson(btn) {
-        const cc = btn.dataset.colorClass;
-        btn.classList.remove(outlineClass(cc));
-        btn.classList.add(cc, 'active');
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('active');
     }
 
     function deactivatePerson(btn) {
-        const cc = btn.dataset.colorClass;
-        btn.classList.remove(cc, 'active');
-        btn.classList.add(outlineClass(cc));
+        btn.classList.add('btn-outline-primary');
+        btn.classList.remove('active');
     }
 
     // ── Person click ───────────────────────────
@@ -378,8 +369,6 @@
     function refreshSymptomUI() {
         symptomBtns.forEach(btn => {
             const selected = selectedSymptoms.has(btn.dataset.symptom);
-            btn.classList.toggle('btn-danger', selected);
-            btn.classList.toggle('btn-outline-danger', !selected);
             btn.classList.toggle('active', selected);
         });
     }
