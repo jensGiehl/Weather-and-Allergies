@@ -5,6 +5,8 @@ import de.agiehl.dailyreportweatherandqualityreport.config.WeatherProperties;
 import de.agiehl.dailyreportweatherandqualityreport.weather.model.WeatherApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -24,10 +26,11 @@ public class WeatherClient {
 
     public WeatherApiResponse fetchTodayWeather() throws IOException, InterruptedException {
         URI uri = buildUri();
-        log.debug("Fetching weather from: {}", uri);
+        log.info("Fetching weather from: {}", uri);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .GET()
                 .build();
 

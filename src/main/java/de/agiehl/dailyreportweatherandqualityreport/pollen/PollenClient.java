@@ -6,6 +6,8 @@ import de.agiehl.dailyreportweatherandqualityreport.config.WeatherProperties;
 import de.agiehl.dailyreportweatherandqualityreport.pollen.model.PollenApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -26,10 +28,11 @@ public class PollenClient {
 
     public PollenApiResponse fetchTodayPollen() throws IOException, InterruptedException {
         URI uri = buildUri();
-        log.debug("Fetching pollen from: {}", uri);
+        log.info("Fetching pollen from: {}", uri);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .GET()
                 .build();
 
