@@ -20,9 +20,10 @@ record DevTriggerResult(
         Double mugwortPollen,
         Double olivePollen,
         Double ragweedPollen,
-        Integer europeanAqi
+        Integer europeanAqi,
+        String telegramMessage
 ) {
-    static DevTriggerResult from(DailyReport report) {
+    static DevTriggerResult from(DailyReport report, String telegramMessage) {
         return new DevTriggerResult(
                 report.getId(),
                 report.getReportDate() != null ? report.getReportDate().toString() : null,
@@ -41,7 +42,8 @@ record DevTriggerResult(
                 report.getMugwortPollen(),
                 report.getOlivePollen(),
                 report.getRagweedPollen(),
-                report.getEuropeanAqi()
+                report.getEuropeanAqi(),
+                telegramMessage
         );
     }
 }

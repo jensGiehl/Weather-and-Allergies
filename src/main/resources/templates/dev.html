@@ -12,6 +12,7 @@
         .result-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6c757d; }
         .result-value { font-size: 1rem; font-weight: 600; }
         .id-box { font-family: monospace; font-size: 0.85rem; background: #f8f9fa; border-radius: 8px; padding: 0.5rem 0.75rem; border: 1px solid #dee2e6; word-break: break-all; }
+        .telegram-preview { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif; font-size: 0.88rem; background: #f8f9fa; border-radius: 8px; padding: 0.85rem 1rem; border: 1px solid #dee2e6; white-space: pre-wrap; word-break: break-word; line-height: 1.45; margin: 0; }
     </style>
 </head>
 <body>
@@ -116,7 +117,7 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-4" style="border-radius: 16px;">
+        <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <h6 class="fw-bold text-muted mb-3"><i class="bi bi-flower1 me-2"></i>Pollenflug (max)</h6>
                 <div class="row g-3">
@@ -148,6 +149,43 @@
             </div>
         </div>
 
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-muted mb-3"><i class="bi bi-telegram me-2 text-primary"></i>Telegram-Nachricht (Tagesbericht)</h6>
+                <p class="text-muted mb-3" style="font-size:0.85rem;">
+                    Vorschau der Nachricht, die der Daily-Scheduler an Telegram senden würde.
+                </p>
+                <pre class="telegram-preview" id="resTelegramDaily"></pre>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 16px;">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-1"><i class="bi bi-calendar-week me-2 text-primary"></i>Wochenrückblick</h5>
+            <p class="text-muted mb-3" style="font-size:0.9rem;">
+                Erzeugt die Telegram-Nachricht der aktuellen Kalenderwoche (sendet nichts).
+            </p>
+            <button id="weeklyBtn" type="button" class="btn btn-primary">
+                <i class="bi bi-telegram me-1"></i>Wochenübersicht anzeigen
+            </button>
+        </div>
+    </div>
+
+    <div id="weeklyAlert" class="alert alert-danger d-none d-flex align-items-center gap-2 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span id="weeklyErrorMsg"></span>
+    </div>
+
+    <div id="weeklyResult" class="card shadow-sm border-0 mb-4 d-none" style="border-radius: 16px;">
+        <div class="card-body p-4">
+            <h6 class="fw-bold text-muted mb-2"><i class="bi bi-telegram me-2"></i>Telegram-Nachricht (Wochenrückblick)</h6>
+            <div class="text-muted mb-3" style="font-size:0.85rem;">
+                Woche <span id="weeklyRange"></span>
+            </div>
+            <pre class="telegram-preview" id="resTelegramWeekly"></pre>
+        </div>
     </div>
 
     <div class="d-flex gap-2">
@@ -200,6 +238,7 @@
             document.getElementById('resOlive').textContent       = val(d.olivePollen);
             document.getElementById('resRagweed').textContent     = val(d.ragweedPollen);
             document.getElementById('resEuropeanAqi').textContent = val(d.europeanAqi);
+            document.getElementById('resTelegramDaily').textContent = d.telegramMessage ?? '–';
 
             results.classList.remove('d-none');
         } catch (e) {
@@ -208,6 +247,35 @@
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Erneut abrufen';
+        }
+    });
+
+    const weeklyBtn      = document.getElementById('weeklyBtn');
+    const weeklyResult   = document.getElementById('weeklyResult');
+    const weeklyAlert    = document.getElementById('weeklyAlert');
+    const weeklyErrorMsg = document.getElementById('weeklyErrorMsg');
+
+    weeklyBtn.addEventListener('click', async () => {
+        weeklyBtn.disabled = true;
+        weeklyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Wird erzeugt…';
+        weeklyResult.classList.add('d-none');
+        weeklyAlert.classList.add('d-none');
+
+        try {
+            const res = await fetch('/dev/weekly-preview');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const d = await res.json();
+
+            document.getElementById('weeklyRange').textContent       = (d.weekStart ?? '?') + ' – ' + (d.weekEnd ?? '?');
+            document.getElementById('resTelegramWeekly').textContent = d.telegramMessage ?? '–';
+
+            weeklyResult.classList.remove('d-none');
+        } catch (e) {
+            weeklyErrorMsg.textContent = 'Fehler beim Erzeugen: ' + e.message;
+            weeklyAlert.classList.remove('d-none');
+        } finally {
+            weeklyBtn.disabled = false;
+            weeklyBtn.innerHTML = '<i class="bi bi-telegram me-1"></i>Wochenübersicht erneut anzeigen';
         }
     });
 </script>
