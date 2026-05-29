@@ -2,14 +2,20 @@ package de.agiehl.dailyreportweatherandqualityreport.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.agiehl.dailyreportweatherandqualityreport.domain.AllergyEntry;
+import de.agiehl.dailyreportweatherandqualityreport.domain.AllergyEntryService;
 import de.agiehl.dailyreportweatherandqualityreport.domain.DailyReport;
 import de.agiehl.dailyreportweatherandqualityreport.domain.DailyReportService;
 import de.agiehl.dailyreportweatherandqualityreport.domain.HourlyReading;
+import de.agiehl.dailyreportweatherandqualityreport.domain.Person;
+import de.agiehl.dailyreportweatherandqualityreport.domain.PersonLoader;
+import de.agiehl.dailyreportweatherandqualityreport.domain.SymptomLoader;
 import de.agiehl.dailyreportweatherandqualityreport.report.EuropeanAqiLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.PollenLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.UvIndexLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.WeatherCondition;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,14 +39,17 @@ public class DayDetailController {
             DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", Locale.GERMAN);
 
     private final DailyReportService dailyReportService;
+    private final AllergyEntryService allergyEntryService;
+    private final PersonLoader personLoader;
+    private final SymptomLoader symptomLoader;
     private final ObjectMapper objectMapper;
 
-    @GetMapping("/day/{id}")
-    public String showDay(@PathVariable String id, Model model) throws JsonProcessingException {
-        DailyReport report = dailyReportService.findById(id)
+    @GetMapping("/day/{date}")
+    public String showDay(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                          Model model) throws JsonProcessingException {
+        DailyReport report = dailyReportService.findByReportDate(date)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bericht nicht gefunden"));
 
-        model.addAttribute("reportId", id);
         model.addAttribute("date", formatDate(report.getReportDate()));
         model.addAttribute("weatherCondition", resolveCondition(report));
         model.addAttribute("temperatureMax", formatTemp(report.getTemperatureMax()));
@@ -54,11 +63,39 @@ public class DayDetailController {
         model.addAttribute("sunset", nullSafe(report.getSunset()));
         model.addAttribute("europeanAqi", formatAqiValue(report.getEuropeanAqi()));
         model.addAttribute("europeanAqiLevel", EuropeanAqiLevel.fromValue(report.getEuropeanAqi()));
-        model.addAttribute("temperatureSeriesJson", buildTemperatureSeriesJson(id));
-        model.addAttribute("pollenChartsJson", buildPollenChartsJson(id));
+        model.addAttribute("temperatureSeriesJson", buildTemperatureSeriesJson(report.getId()));
+        model.addAttribute("pollenChartsJson", buildPollenChartsJson(report.getId()));
         model.addAttribute("pollenEntries", buildPollenEntries(report));
+        model.addAttribute("personSymptoms", buildPersonSymptoms(report.getId()));
 
         return "day";
+    }
+
+    private List<Map<String, Object>> buildPersonSymptoms(String dailyReportId) {
+        List<AllergyEntry> entries = allergyEntryService.findByDailyReportId(dailyReportId);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (AllergyEntry entry : entries) {
+            List<Map<String, String>> symptoms = parseSymptoms(entry.getSymptoms());
+            if (symptoms.isEmpty()) continue;
+            Person person = personLoader.findByName(entry.getPersonName()).orElse(null);
+            result.add(Map.of(
+                    "personName", entry.getPersonName(),
+                    "personEmoji", person != null ? person.emoji() : "👤",
+                    "badgeClass", person != null ? person.badgeClass() : "bg-secondary-subtle text-secondary-emphasis",
+                    "symptoms", symptoms
+            ));
+        }
+        return result;
+    }
+
+    private List<Map<String, String>> parseSymptoms(String symptomsStr) {
+        if (symptomsStr == null || symptomsStr.isBlank()) return List.of();
+        List<Map<String, String>> result = new ArrayList<>();
+        for (String code : symptomsStr.split(",")) {
+            symptomLoader.findByCode(code.trim())
+                    .ifPresent(s -> result.add(Map.of("icon", s.icon(), "label", s.label())));
+        }
+        return result;
     }
 
     private String formatDate(LocalDate date) {

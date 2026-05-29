@@ -97,6 +97,50 @@
             font-size: 1.05rem;
             font-weight: 700;
         }
+
+        .symptom-list {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .symptom-card {
+            background: white;
+            border-radius: 14px;
+            padding: 0.7rem 0.85rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .symptom-card .person-pill {
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-bottom: 0.55rem;
+        }
+
+        .symptom-card .symptom-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .symptom-card .symptom-badge {
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 0.28rem 0.6rem;
+            border-radius: 50px;
+            background: #fdecea;
+            color: #b71c1c;
+            border: 1px solid #f5c6c0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
     </style>
 </head>
 <body>
@@ -190,13 +234,30 @@
     <div class="pollen-chart-grid" id="pollenChartGrid"></div>
 </section>
 
+<section th:if="${not #lists.isEmpty(personSymptoms)}">
+    <div class="section-bar">
+        <h2><i class="bi bi-clipboard2-pulse me-2 text-danger"></i>Symptome heute</h2>
+    </div>
+    <div class="symptom-list">
+        <div class="symptom-card" th:each="entry : ${personSymptoms}">
+            <span class="person-pill" th:classappend="${entry.badgeClass}">
+                <span th:text="${entry.personEmoji}">👤</span>
+                <span th:text="${entry.personName}">Papa</span>
+            </span>
+            <div class="symptom-badges">
+                <span th:each="sym : ${entry.symptoms}" class="symptom-badge">
+                    <i class="bi" th:classappend="${sym.icon}"></i>
+                    <span th:text="${sym.label}">Niesen</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</section>
+
 <div class="input-cta">
-    <a th:href="@{'/report/' + ${reportId}}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
-        <i class="bi bi-clipboard2-pulse"></i>
-        Symptome erfassen
-    </a>
-    <a th:href="@{/}" class="btn btn-link w-100 mt-2" style="font-size:0.85rem">
-        <i class="bi bi-grid me-1"></i>Alle Tage
+    <a th:href="@{/}" class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="bi bi-grid"></i>
+        Alle Tage
     </a>
 </div>
 

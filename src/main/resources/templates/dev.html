@@ -183,7 +183,7 @@
             const d = await res.json();
 
             document.getElementById('resId').textContent          = d.id ?? '–';
-            document.getElementById('linkDay').href               = d.id ? '/day/' + d.id : '#';
+            document.getElementById('linkDay').href               = d.reportDate ? '/day/' + d.reportDate : '#';
             document.getElementById('linkReport').href            = d.id ? '/report/' + d.id : '#';
             document.getElementById('resDate').textContent        = d.reportDate ?? '–';
             document.getElementById('resWeatherCode').textContent = val(d.weatherCode);

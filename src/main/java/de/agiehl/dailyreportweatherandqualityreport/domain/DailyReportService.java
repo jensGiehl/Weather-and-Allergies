@@ -68,6 +68,10 @@ public class DailyReportService {
         return repository.findById(id);
     }
 
+    public Optional<DailyReport> findByReportDate(LocalDate date) {
+        return repository.findByReportDate(date);
+    }
+
     public List<DailyReport> findAllSortedByDateDesc() {
         return repository.findAllByOrderByReportDateDesc();
     }

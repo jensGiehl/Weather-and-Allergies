@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -30,9 +32,14 @@ public class OverviewController {
         List<DailyReport> reports = dailyReportService.findAllSortedByDateDesc();
         List<OverviewRow> rows = buildRows(reports);
 
-        long entryCount = rows.stream().filter(OverviewRow::hasEntry).count();
+        long entryCount = rows.stream()
+                .mapToLong(row -> row.symptomsByPerson().values().stream()
+                        .filter(symptoms -> !symptoms.isEmpty())
+                        .count())
+                .sum();
 
         model.addAttribute("rows", rows);
+        model.addAttribute("persons", personLoader.getPersons());
         model.addAttribute("reportCount", reports.size());
         model.addAttribute("entryCount", entryCount);
 
@@ -42,53 +49,38 @@ public class OverviewController {
     private List<OverviewRow> buildRows(List<DailyReport> reports) {
         List<OverviewRow> rows = new ArrayList<>();
         for (DailyReport report : reports) {
-            List<AllergyEntry> entries = allergyEntryService.findByDailyReportId(report.getId());
-            if (entries.isEmpty()) {
-                rows.add(emptyRow(report));
-            } else {
-                entries.stream().map(e -> entryRow(report, e)).forEach(rows::add);
-            }
+            rows.add(toRow(report));
         }
         return rows;
     }
 
-    private OverviewRow emptyRow(DailyReport report) {
+    private OverviewRow toRow(DailyReport report) {
         WeatherCondition condition = resolveCondition(report);
+        Map<String, List<OverviewRow.SymptomDisplay>> symptomsByPerson = buildSymptomsByPerson(report);
+        boolean hasAnyEntry = symptomsByPerson.values().stream().anyMatch(list -> !list.isEmpty());
+
         return new OverviewRow(
-                report.getId(),
                 report.getReportDate(),
                 formatDate(report),
                 condition.getEmoji(),
                 condition.getLabel(),
                 formatTemp(report.getTemperatureMax()),
                 formatTemp(report.getTemperatureMin()),
-                false, "", "", "",
-                List.of(), buildPollenEntries(report)
+                hasAnyEntry,
+                symptomsByPerson,
+                buildPollenEntries(report)
         );
     }
 
-    private OverviewRow entryRow(DailyReport report, AllergyEntry entry) {
-        WeatherCondition condition = resolveCondition(report);
-        Person person = personLoader.findByName(entry.getPersonName()).orElse(null);
-
-        String emoji      = person != null ? person.emoji()      : "👤";
-        String badgeClass = person != null ? person.badgeClass() : "bg-secondary-subtle text-secondary-emphasis";
-
-        return new OverviewRow(
-                report.getId(),
-                report.getReportDate(),
-                formatDate(report),
-                condition.getEmoji(),
-                condition.getLabel(),
-                formatTemp(report.getTemperatureMax()),
-                formatTemp(report.getTemperatureMin()),
-                true,
-                entry.getPersonName(),
-                emoji,
-                badgeClass,
-                parseSymptoms(entry.getSymptoms()),
-                buildPollenEntries(report)
-        );
+    private Map<String, List<OverviewRow.SymptomDisplay>> buildSymptomsByPerson(DailyReport report) {
+        Map<String, List<OverviewRow.SymptomDisplay>> result = new HashMap<>();
+        for (Person person : personLoader.getPersons()) {
+            result.put(person.name(), List.of());
+        }
+        for (AllergyEntry entry : allergyEntryService.findByDailyReportId(report.getId())) {
+            result.put(entry.getPersonName(), parseSymptoms(entry.getSymptoms()));
+        }
+        return result;
     }
 
     private List<OverviewRow.PollenDisplay> buildPollenEntries(DailyReport report) {

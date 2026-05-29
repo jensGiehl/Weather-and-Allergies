@@ -69,10 +69,13 @@
         .date-cell { white-space: nowrap; }
         .date-cell .weekday { color: #6c757d; font-size: 0.75rem; }
         .date-cell .date    { font-weight: 600; font-size: 0.9rem; }
+        .date-cell a { color: #0d6efd; text-decoration: none; }
+        .date-cell a:hover { text-decoration: underline; }
 
         .temp-cell { white-space: nowrap; font-size: 0.85rem; }
 
-        .symptom-list { display: flex; flex-wrap: wrap; gap: 4px; min-width: 200px; }
+        .symptom-list { display: flex; flex-wrap: wrap; gap: 4px; min-width: 140px; }
+        .person-col-header { display: inline-flex; align-items: center; gap: 0.3rem; }
 
         .weather-cell { white-space: nowrap; font-size: 0.9rem; }
         .weather-label { font-size: 0.72rem; color: #6c757d; }
@@ -144,18 +147,24 @@
                             <th><i class="bi bi-calendar3 me-1"></i>Datum</th>
                             <th><i class="bi bi-cloud-sun me-1"></i>Wetter</th>
                             <th><i class="bi bi-thermometer-half me-1"></i>Temp.</th>
-                            <th><i class="bi bi-person me-1"></i>Person</th>
-                            <th><i class="bi bi-clipboard2-pulse me-1"></i>Symptome</th>
+                            <th th:each="person : ${persons}">
+                                <span class="person-col-header">
+                                    <span th:text="${person.emoji()}">👤</span>
+                                    <span th:text="${person.name}">Papa</span>
+                                </span>
+                            </th>
                             <th><i class="bi bi-flower1 me-1"></i>Pollenflug</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:each="row : ${rows}"
-                            th:classappend="${!row.hasEntry} ? 'empty-row' : ''">
+                            th:classappend="${!row.hasAnyEntry} ? 'empty-row' : ''">
 
                             <!-- Datum -->
                             <td class="date-cell" th:attr="data-order=${row.reportDate}">
-                                <div class="date" th:text="${row.dateFormatted}">Mo, 26.05.2026</div>
+                                <a th:href="@{'/day/' + ${row.reportDate}}">
+                                    <span class="date" th:text="${row.dateFormatted}">Mo, 26.05.2026</span>
+                                </a>
                             </td>
 
                             <!-- Wetter -->
@@ -172,31 +181,17 @@
                                 <span th:text="${row.tempMin}">–</span>°
                             </td>
 
-                            <!-- Person -->
-                            <td>
-                                <span th:if="${row.hasEntry}"
-                                      class="person-pill"
-                                      th:classappend="${row.personBadgeClass}">
-                                    <span th:text="${row.personEmoji}">👤</span>
-                                    <span th:text="${row.personName}">Papa</span>
-                                </span>
-                                <span th:unless="${row.hasEntry}" class="text-muted fst-italic" style="font-size:0.8rem">
-                                    Keine Einträge
-                                </span>
-                            </td>
-
-                            <!-- Symptome -->
-                            <td>
-                                <div class="symptom-list" th:if="${row.hasEntry and !row.symptoms.isEmpty()}">
-                                    <span th:each="sym : ${row.symptoms}"
+                            <!-- Symptome je Person -->
+                            <td th:each="person : ${persons}"
+                                th:with="symptoms=${row.symptomsByPerson.get(person.name)}">
+                                <div class="symptom-list" th:if="${not #lists.isEmpty(symptoms)}">
+                                    <span th:each="sym : ${symptoms}"
                                           class="symptom-badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
                                         <i class="bi me-1" th:classappend="${sym.icon}"></i>
                                         <span th:text="${sym.label}">Niesen</span>
                                     </span>
                                 </div>
-                                <span th:if="${row.hasEntry and row.symptoms.isEmpty()}"
-                                      class="text-muted fst-italic" style="font-size:0.8rem">–</span>
-                                <span th:unless="${row.hasEntry}" class="text-muted">–</span>
+                                <span th:if="${#lists.isEmpty(symptoms)}" class="text-muted">–</span>
                             </td>
 
                             <!-- Pollenflug -->

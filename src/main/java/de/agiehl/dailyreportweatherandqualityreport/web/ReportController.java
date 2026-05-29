@@ -43,6 +43,7 @@ public class ReportController {
 
         model.addAttribute("reportId", id);
         model.addAttribute("date", formatDate(report.getReportDate()));
+        model.addAttribute("reportDateIso", report.getReportDate() != null ? report.getReportDate().toString() : "");
         model.addAttribute("persons", personLoader.getPersons());
         model.addAttribute("symptoms", symptomLoader.getSymptoms());
         model.addAttribute("existingEntriesJson", buildExistingEntriesJson(id));
