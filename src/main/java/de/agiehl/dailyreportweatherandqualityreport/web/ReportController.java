@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Controller
@@ -55,6 +56,7 @@ public class ReportController {
         model.addAttribute("europeanAqi", formatAqiValue(report.getEuropeanAqi()));
         model.addAttribute("europeanAqiLevel", EuropeanAqiLevel.fromValue(report.getEuropeanAqi()));
         model.addAttribute("temperatureSeriesJson", buildTemperatureSeriesJson(id));
+        model.addAttribute("pollenChartsJson", buildPollenChartsJson(id));
         model.addAttribute("pollenEntries", buildPollenEntries(report));
         model.addAttribute("persons", personLoader.getPersons());
         model.addAttribute("symptoms", symptomLoader.getSymptoms());
@@ -142,6 +144,44 @@ public class ReportController {
                 ))
                 .toList();
         return objectMapper.writeValueAsString(points);
+    }
+
+    private String buildPollenChartsJson(String dailyReportId) throws JsonProcessingException {
+        List<HourlyReading> readings = dailyReportService.findHourlyReadings(dailyReportId);
+        List<Map<String, Object>> charts = new ArrayList<>();
+        addPollenChartIfActive(charts, readings, "Erle",     "🌳", "#8d6e63", HourlyReading::getAlderPollen);
+        addPollenChartIfActive(charts, readings, "Birke",    "🌳", "#81c784", HourlyReading::getBirchPollen);
+        addPollenChartIfActive(charts, readings, "Gras",     "🌾", "#c0ca33", HourlyReading::getGrassPollen);
+        addPollenChartIfActive(charts, readings, "Beifuß",   "🌿", "#9575cd", HourlyReading::getMugwortPollen);
+        addPollenChartIfActive(charts, readings, "Olive",    "🫒", "#689f38", HourlyReading::getOlivePollen);
+        addPollenChartIfActive(charts, readings, "Ambrosia", "🌼", "#ffb300", HourlyReading::getRagweedPollen);
+        return objectMapper.writeValueAsString(charts);
+    }
+
+    private void addPollenChartIfActive(List<Map<String, Object>> charts,
+                                        List<HourlyReading> readings,
+                                        String name,
+                                        String emoji,
+                                        String color,
+                                        Function<HourlyReading, Double> extractor) {
+        List<Map<String, Object>> points = readings.stream()
+                .filter(r -> extractor.apply(r) != null)
+                .map(r -> Map.<String, Object>of(
+                        "hour", r.getHourOfDay(),
+                        "value", extractor.apply(r)
+                ))
+                .toList();
+
+        boolean hasNonZero = points.stream()
+                .anyMatch(p -> ((Number) p.get("value")).doubleValue() > 0.0);
+        if (!hasNonZero) return;
+
+        charts.add(Map.of(
+                "name", name,
+                "emoji", emoji,
+                "color", color,
+                "points", points
+        ));
     }
 
     private String buildExistingEntriesJson(String dailyReportId) throws JsonProcessingException {
