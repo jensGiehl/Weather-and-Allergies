@@ -45,6 +45,7 @@ public class WeatherClient {
                 + "?latitude=" + properties.latitude()
                 + "&longitude=" + properties.longitude()
                 + "&daily=" + properties.dailyVariables()
+                + "&hourly=" + properties.hourlyVariables()
                 + "&timezone=" + properties.timezone()
                 + "&forecast_days=1";
         return URI.create(url);

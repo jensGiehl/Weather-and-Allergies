@@ -54,6 +54,7 @@ public class ReportController {
         model.addAttribute("sunset", nullSafe(report.getSunset()));
         model.addAttribute("europeanAqi", formatAqiValue(report.getEuropeanAqi()));
         model.addAttribute("europeanAqiLevel", EuropeanAqiLevel.fromValue(report.getEuropeanAqi()));
+        model.addAttribute("temperatureSeriesJson", buildTemperatureSeriesJson(id));
         model.addAttribute("pollenEntries", buildPollenEntries(report));
         model.addAttribute("persons", personLoader.getPersons());
         model.addAttribute("symptoms", symptomLoader.getSymptoms());
@@ -130,6 +131,17 @@ public class ReportController {
             case HIGH     -> "bg-danger";
             case VERY_HIGH -> "bg-dark";
         };
+    }
+
+    private String buildTemperatureSeriesJson(String dailyReportId) throws JsonProcessingException {
+        List<Map<String, Object>> points = dailyReportService.findHourlyReadings(dailyReportId).stream()
+                .filter(reading -> reading.getTemperature() != null)
+                .map(reading -> Map.<String, Object>of(
+                        "hour", reading.getHourOfDay(),
+                        "temperature", reading.getTemperature()
+                ))
+                .toList();
+        return objectMapper.writeValueAsString(points);
     }
 
     private String buildExistingEntriesJson(String dailyReportId) throws JsonProcessingException {

@@ -9,5 +9,6 @@ public record WeatherProperties(
         String locationName,
         String timezone,
         String apiUrl,
-        String dailyVariables
+        String dailyVariables,
+        String hourlyVariables
 ) {}

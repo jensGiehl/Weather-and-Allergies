@@ -7,7 +7,8 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record WeatherApiResponse(
-        @JsonProperty("daily") DailyWeather daily
+        @JsonProperty("daily") DailyWeather daily,
+        @JsonProperty("hourly") HourlyWeather hourly
 ) {
     public record DailyWeather(
             @JsonProperty("time") List<String> time,
@@ -20,5 +21,10 @@ public record WeatherApiResponse(
             @JsonProperty("uv_index_max") List<Double> uvIndexMax,
             @JsonProperty("sunrise") List<String> sunrise,
             @JsonProperty("sunset") List<String> sunset
+    ) {}
+
+    public record HourlyWeather(
+            @JsonProperty("time") List<String> time,
+            @JsonProperty("temperature_2m") List<Double> temperature
     ) {}
 }

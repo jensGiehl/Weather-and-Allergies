@@ -32,6 +32,16 @@
         .weather-tile .lbl   { font-size: 0.65rem; opacity: 0.8; margin: 0.2rem 0; }
         .weather-tile .val   { font-size: 0.85rem; font-weight: 700; }
 
+        .weather-tile.chart-tile { padding: 0.35rem 0.55rem; text-align: left; }
+        .weather-tile.chart-tile .lbl { margin: 0 0 0.15rem; }
+        .chart-tile canvas { width: 100% !important; height: 78px !important; display: block; }
+
+        .col-chart {
+            flex: 0 0 auto;
+            width: 66.6666%;
+            max-width: 66.6666%;
+        }
+
         /* ── Section Headers ─────────────────────── */
         .section-bar {
             background: white;
@@ -224,6 +234,12 @@
                 <div class="val" th:text="${europeanAqi}">–</div>
             </div>
         </div>
+        <div class="col-chart">
+            <div class="weather-tile chart-tile">
+                <div class="lbl">🌡️ Temperaturverlauf (°C)</div>
+                <canvas id="temperatureChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <!-- Pollen Badges -->
@@ -299,10 +315,71 @@
 </div>
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/webjars/chart.js/dist/chart.umd.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     const REPORT_ID = /*[[${reportId}]]*/ '';
     const EXISTING = JSON.parse(/*[[${existingEntriesJson}]]*/ '{}');
+    const TEMPERATURE_SERIES = JSON.parse(/*[[${temperatureSeriesJson}]]*/ '[]');
+
+    renderTemperatureChart(TEMPERATURE_SERIES);
+
+    function renderTemperatureChart(series) {
+        const canvas = document.getElementById('temperatureChart');
+        if (!canvas || !series.length || typeof Chart === 'undefined') return;
+
+        const labels = series.map(p => String(p.hour).padStart(2, '0'));
+        const data = series.map(p => p.temperature);
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    borderColor: '#ffffff',
+                    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointHoverBackgroundColor: '#ffffff',
+                    tension: 0.35,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: items => items[0].label + ':00 Uhr',
+                            label: ctx => ctx.parsed.y.toFixed(1) + ' °C'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: 'rgba(255,255,255,0.75)',
+                            font: { size: 9 },
+                            autoSkip: true,
+                            maxTicksLimit: 6
+                        },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: {
+                            color: 'rgba(255,255,255,0.75)',
+                            font: { size: 9 }
+                        },
+                        grid: { color: 'rgba(255,255,255,0.12)' }
+                    }
+                }
+            }
+        });
+    }
 
     let selectedPerson = null;
     let selectedSymptoms = new Set();

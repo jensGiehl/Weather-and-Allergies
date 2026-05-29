@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,7 +20,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DailyReportService {
 
+    private static final int HOURS_PER_DAY = 24;
+
     private final DailyReportRepository repository;
+    private final HourlyReadingRepository hourlyReadingRepository;
     private final WeatherProperties weatherProperties;
 
     @Transactional
@@ -43,18 +48,20 @@ public class DailyReportService {
         report.setSunrise(extractTime(firstStr(daily.sunrise())));
         report.setSunset(extractTime(firstStr(daily.sunset())));
 
-        PollenApiResponse.Hourly hourly = pollen.hourly();
-        if (hourly != null) {
-            report.setAlderPollen(maxDouble(hourly.alderPollen()));
-            report.setBirchPollen(maxDouble(hourly.birchPollen()));
-            report.setGrassPollen(maxDouble(hourly.grassPollen()));
-            report.setMugwortPollen(maxDouble(hourly.mugwortPollen()));
-            report.setOlivePollen(maxDouble(hourly.olivePollen()));
-            report.setRagweedPollen(maxDouble(hourly.ragweedPollen()));
-            report.setEuropeanAqi(maxInt(hourly.europeanAqi()));
+        PollenApiResponse.Hourly pollenHourly = pollen.hourly();
+        if (pollenHourly != null) {
+            report.setAlderPollen(maxDouble(pollenHourly.alderPollen()));
+            report.setBirchPollen(maxDouble(pollenHourly.birchPollen()));
+            report.setGrassPollen(maxDouble(pollenHourly.grassPollen()));
+            report.setMugwortPollen(maxDouble(pollenHourly.mugwortPollen()));
+            report.setOlivePollen(maxDouble(pollenHourly.olivePollen()));
+            report.setRagweedPollen(maxDouble(pollenHourly.ragweedPollen()));
+            report.setEuropeanAqi(maxInt(pollenHourly.europeanAqi()));
         }
 
-        return repository.save(report);
+        DailyReport saved = repository.save(report);
+        replaceHourlyReadings(saved.getId(), weather.hourly(), pollenHourly);
+        return saved;
     }
 
     public Optional<DailyReport> findById(String id) {
@@ -63,6 +70,55 @@ public class DailyReportService {
 
     public List<DailyReport> findAllSortedByDateDesc() {
         return repository.findAllByOrderByReportDateDesc();
+    }
+
+    public List<HourlyReading> findHourlyReadings(String dailyReportId) {
+        return hourlyReadingRepository.findByDailyReportIdOrderByHourOfDayAsc(dailyReportId);
+    }
+
+    private void replaceHourlyReadings(String dailyReportId,
+                                       WeatherApiResponse.HourlyWeather weatherHourly,
+                                       PollenApiResponse.Hourly pollenHourly) {
+        hourlyReadingRepository.deleteByDailyReportId(dailyReportId);
+
+        List<HourlyReading> readings = new ArrayList<>();
+        for (int hour = 0; hour < HOURS_PER_DAY; hour++) {
+            HourlyReading reading = buildHourlyReading(dailyReportId, hour, weatherHourly, pollenHourly);
+            if (hasAnyValue(reading)) {
+                readings.add(reading);
+            }
+        }
+        hourlyReadingRepository.saveAll(readings);
+    }
+
+    private HourlyReading buildHourlyReading(String dailyReportId, int hour,
+                                             WeatherApiResponse.HourlyWeather weatherHourly,
+                                             PollenApiResponse.Hourly pollenHourly) {
+        HourlyReading reading = new HourlyReading();
+        reading.setId(UUID.randomUUID().toString());
+        reading.setNew(true);
+        reading.setDailyReportId(dailyReportId);
+        reading.setHourOfDay(hour);
+        reading.setTemperature(weatherHourly != null ? doubleAt(weatherHourly.temperature(), hour) : null);
+        if (pollenHourly != null) {
+            reading.setAlderPollen(doubleAt(pollenHourly.alderPollen(), hour));
+            reading.setBirchPollen(doubleAt(pollenHourly.birchPollen(), hour));
+            reading.setGrassPollen(doubleAt(pollenHourly.grassPollen(), hour));
+            reading.setMugwortPollen(doubleAt(pollenHourly.mugwortPollen(), hour));
+            reading.setOlivePollen(doubleAt(pollenHourly.olivePollen(), hour));
+            reading.setRagweedPollen(doubleAt(pollenHourly.ragweedPollen(), hour));
+        }
+        return reading;
+    }
+
+    private boolean hasAnyValue(HourlyReading reading) {
+        return reading.getTemperature() != null
+                || reading.getAlderPollen() != null
+                || reading.getBirchPollen() != null
+                || reading.getGrassPollen() != null
+                || reading.getMugwortPollen() != null
+                || reading.getOlivePollen() != null
+                || reading.getRagweedPollen() != null;
     }
 
     private DailyReport createEmptyReport(LocalDate date) {
@@ -86,10 +142,14 @@ public class DailyReportService {
         return (list != null && !list.isEmpty()) ? list.get(0) : null;
     }
 
+    private Double doubleAt(List<Double> list, int index) {
+        return (list != null && index < list.size()) ? list.get(index) : null;
+    }
+
     private Double maxDouble(List<Double> list) {
         if (list == null) return null;
         return list.stream()
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .max(Double::compareTo)
                 .orElse(null);
     }
@@ -97,7 +157,7 @@ public class DailyReportService {
     private Integer maxInt(List<Integer> list) {
         if (list == null) return null;
         return list.stream()
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .max(Integer::compareTo)
                 .orElse(null);
     }
