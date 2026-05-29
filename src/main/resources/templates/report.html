@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Allergietagebuch</title>
+    <title>Symptome erfassen – Allergietagebuch</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <style>
@@ -14,35 +14,26 @@
             overscroll-behavior-y: none;
         }
 
-        /* ── Weather Header ─────────────────────── */
-        .weather-header {
+        .input-header {
             background: linear-gradient(145deg, #1565c0 0%, #0288d1 60%, #00acc1 100%);
             color: white;
+            padding: 1rem 1rem 1.1rem;
         }
 
-        .weather-tile {
-            background: rgba(255, 255, 255, 0.18);
-            border-radius: 14px;
-            padding: 0.65rem 0.5rem;
-            text-align: center;
-            backdrop-filter: blur(4px);
+        .input-header .back-link {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.78rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
         }
 
-        .weather-tile .icon  { font-size: 1.6rem; line-height: 1; }
-        .weather-tile .lbl   { font-size: 0.65rem; opacity: 0.8; margin: 0.2rem 0; }
-        .weather-tile .val   { font-size: 0.85rem; font-weight: 700; }
+        .input-header .back-link:hover { color: white; }
 
-        .weather-tile.chart-tile { padding: 0.35rem 0.55rem; text-align: left; }
-        .weather-tile.chart-tile .lbl { margin: 0 0 0.15rem; }
-        .chart-tile canvas { width: 100% !important; height: 78px !important; display: block; }
+        .input-header .title { font-weight: 700; font-size: 1.15rem; }
+        .input-header .date  { font-size: 0.8rem; opacity: 0.85; }
 
-        .col-chart {
-            flex: 0 0 auto;
-            width: 66.6666%;
-            max-width: 66.6666%;
-        }
-
-        /* ── Section Headers ─────────────────────── */
         .section-bar {
             background: white;
             border-bottom: 2px solid #e3e8ef;
@@ -59,7 +50,6 @@
             color: #1a237e;
         }
 
-        /* ── Person Buttons ──────────────────────── */
         .person-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -97,7 +87,6 @@
             color: white;
         }
 
-        /* ── Symptom Buttons ─────────────────────── */
         .symptom-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -133,7 +122,6 @@
             pointer-events: none;
         }
 
-        /* ── Save Badge ──────────────────────────── */
         .save-badge {
             position: fixed;
             top: 1rem;
@@ -157,147 +145,23 @@
             transform: translateY(0);
         }
 
-        /* ── No-person hint ──────────────────────── */
         .no-person-hint {
             text-align: center;
             padding: 2.5rem 1rem;
             color: #90a4ae;
         }
-
-        /* ── Pollen charts grid ──────────────────── */
-        .pollen-chart-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            padding: 12px;
-        }
-
-        .pollen-chart-card {
-            background: white;
-            border-radius: 14px;
-            padding: 0.55rem 0.7rem 0.4rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .pollen-chart-title {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: #37474f;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .pollen-chart-card canvas {
-            width: 100% !important;
-            height: 80px !important;
-            display: block;
-        }
     </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════
-     WEATHER HEADER
-══════════════════════════════════════════════ -->
-<header class="weather-header px-3 pt-4 pb-3">
-    <div class="d-flex align-items-center gap-2 mb-1">
-        <span style="font-size:2rem" th:text="${weatherCondition.emoji}">☀️</span>
-        <div>
-            <div class="fw-bold fs-5 lh-1">Allergietagebuch</div>
-            <div style="font-size:0.8rem;opacity:0.85" th:text="${date}">Dienstag, 27. Mai 2025</div>
-        </div>
-    </div>
-    <div class="mb-3" style="font-size:0.9rem;opacity:0.9" th:text="${weatherCondition.label}">Teilweise bewölkt</div>
-
-    <!-- 6 Weather Tiles -->
-    <div class="row row-cols-3 g-2 mb-3">
-        <div class="col">
-            <div class="weather-tile">
-                <div class="icon">🌡️</div>
-                <div class="lbl">Temperatur</div>
-                <div class="val">
-                    <span th:text="${temperatureMax}">–</span>°
-                    <span style="opacity:0.7">/ <span th:text="${temperatureMin}">–</span>°</span>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="weather-tile">
-                <div class="icon">🌧️</div>
-                <div class="lbl">Niederschlag</div>
-                <div class="val" th:text="${precipitationSum}">–</div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="weather-tile">
-                <div class="icon">💨</div>
-                <div class="lbl">Wind</div>
-                <div class="val" th:text="${windspeedMax}">–</div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="weather-tile">
-                <div class="icon" th:text="${uvLevel.emoji}">🟡</div>
-                <div class="lbl">UV-Index</div>
-                <div class="val" th:text="${uvIndexMax}">–</div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="weather-tile">
-                <div class="icon">🌅</div>
-                <div class="lbl">Aufgang</div>
-                <div class="val" th:text="${sunrise}">–</div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="weather-tile">
-                <div class="icon">🌇</div>
-                <div class="lbl">Untergang</div>
-                <div class="val" th:text="${sunset}">–</div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="weather-tile">
-                <div class="icon" th:text="${europeanAqiLevel.emoji}">🟢</div>
-                <div class="lbl">Luftqualität</div>
-                <div class="val" th:text="${europeanAqi}">–</div>
-            </div>
-        </div>
-        <div class="col-chart">
-            <div class="weather-tile chart-tile">
-                <div class="lbl">🌡️ Temperaturverlauf (°C)</div>
-                <canvas id="temperatureChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pollen Badges -->
-    <div>
-        <div style="font-size:0.72rem;opacity:0.8;margin-bottom:0.35rem">🌿 Pollenflug</div>
-        <div class="d-flex flex-wrap gap-1">
-            <span th:each="p : ${pollenEntries}"
-                  class="badge rounded-pill"
-                  th:classappend="${p['badgeClass']}"
-                  th:text="${p['emoji'] + ' ' + p['name']}">✅ Birke</span>
-        </div>
-    </div>
+<header class="input-header">
+    <a th:href="@{'/day/' + ${reportId}}" class="back-link">
+        <i class="bi bi-arrow-left"></i>Zur Tagesübersicht
+    </a>
+    <div class="title mt-1">Symptome erfassen</div>
+    <div class="date" th:text="${date}">Dienstag, 27. Mai 2025</div>
 </header>
 
-<!-- ══════════════════════════════════════════════
-     POLLEN DAILY CHARTS (only active pollens)
-══════════════════════════════════════════════ -->
-<section id="pollen-charts-section" style="display:none">
-    <div class="section-bar">
-        <h2><i class="bi bi-flower1 me-2 text-success"></i>Pollen-Tagesverlauf</h2>
-    </div>
-    <div class="pollen-chart-grid" id="pollenChartGrid"></div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     SECTION 1 – PERSON SELECTION
-══════════════════════════════════════════════ -->
 <section id="person-section">
     <div class="section-bar">
         <h2><i class="bi bi-people-fill me-2 text-primary"></i>Wer hat Symptome?</h2>
@@ -315,9 +179,6 @@
     </div>
 </section>
 
-<!-- ══════════════════════════════════════════════
-     SECTION 2 – SYMPTOM SELECTION
-══════════════════════════════════════════════ -->
 <section id="symptom-section">
     <div class="section-bar">
         <h2><i class="bi bi-clipboard2-pulse me-2 text-danger"></i>Welche Symptome?</h2>
@@ -341,169 +202,15 @@
     </div>
 </section>
 
-<!-- ══════════════════════════════════════════════
-     FOOTER
-══════════════════════════════════════════════ -->
-<footer class="text-center text-muted py-4" style="font-size:0.75rem">
-    <i class="bi bi-cloud-check me-1"></i>Wetterdaten: Open-Meteo.com
-</footer>
-
-<!-- ══════════════════════════════════════════════
-     SAVE INDICATOR
-══════════════════════════════════════════════ -->
 <div class="save-badge" id="saveBadge">
     <i class="bi bi-check2-circle me-1"></i>Gespeichert
 </div>
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
-<script th:src="@{/webjars/chart.js/dist/chart.umd.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     const REPORT_ID = /*[[${reportId}]]*/ '';
     const EXISTING = JSON.parse(/*[[${existingEntriesJson}]]*/ '{}');
-    const TEMPERATURE_SERIES = JSON.parse(/*[[${temperatureSeriesJson}]]*/ '[]');
-    const POLLEN_CHARTS = JSON.parse(/*[[${pollenChartsJson}]]*/ '[]');
-
-    renderTemperatureChart(TEMPERATURE_SERIES);
-    renderPollenCharts(POLLEN_CHARTS);
-
-    function renderPollenCharts(charts) {
-        if (typeof Chart === 'undefined' || !charts.length) return;
-
-        const section = document.getElementById('pollen-charts-section');
-        const grid = document.getElementById('pollenChartGrid');
-        section.style.display = '';
-
-        charts.forEach(cfg => {
-            const card = document.createElement('div');
-            card.className = 'pollen-chart-card';
-            const title = document.createElement('div');
-            title.className = 'pollen-chart-title';
-            title.textContent = cfg.emoji + ' ' + cfg.name;
-            const canvas = document.createElement('canvas');
-            card.appendChild(title);
-            card.appendChild(canvas);
-            grid.appendChild(card);
-
-            const labels = cfg.points.map(p => String(p.hour).padStart(2, '0'));
-            const data = cfg.points.map(p => p.value);
-
-            new Chart(canvas, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        borderColor: cfg.color,
-                        backgroundColor: hexToRgba(cfg.color, 0.18),
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 4,
-                        pointHoverBackgroundColor: cfg.color,
-                        tension: 0.35,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: items => items[0].label + ':00 Uhr',
-                                label: ctx => ctx.parsed.y.toFixed(1) + ' grains/m³'
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: '#78909c',
-                                font: { size: 9 },
-                                autoSkip: true,
-                                maxTicksLimit: 6
-                            },
-                            grid: { display: false }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: '#78909c',
-                                font: { size: 9 },
-                                maxTicksLimit: 4
-                            },
-                            grid: { color: 'rgba(0,0,0,0.05)' }
-                        }
-                    }
-                }
-            });
-        });
-    }
-
-    function hexToRgba(hex, alpha) {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
-    function renderTemperatureChart(series) {
-        const canvas = document.getElementById('temperatureChart');
-        if (!canvas || !series.length || typeof Chart === 'undefined') return;
-
-        const labels = series.map(p => String(p.hour).padStart(2, '0'));
-        const data = series.map(p => p.temperature);
-
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    borderColor: '#ffffff',
-                    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    pointHoverBackgroundColor: '#ffffff',
-                    tension: 0.35,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: items => items[0].label + ':00 Uhr',
-                            label: ctx => ctx.parsed.y.toFixed(1) + ' °C'
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            color: 'rgba(255,255,255,0.75)',
-                            font: { size: 9 },
-                            autoSkip: true,
-                            maxTicksLimit: 6
-                        },
-                        grid: { display: false }
-                    },
-                    y: {
-                        ticks: {
-                            color: 'rgba(255,255,255,0.75)',
-                            font: { size: 9 }
-                        },
-                        grid: { color: 'rgba(255,255,255,0.12)' }
-                    }
-                }
-            }
-        });
-    }
 
     let selectedPerson = null;
     let selectedSymptoms = new Set();
@@ -515,7 +222,6 @@
     const noPersonHint = document.getElementById('noPersonHint');
     const saveBadge    = document.getElementById('saveBadge');
 
-    // ── Init: mark persons that already have an entry ──
     personBtns.forEach(btn => {
         const saved = EXISTING[btn.dataset.person];
         if (saved && saved.some(s => s.trim() !== '')) {
@@ -523,7 +229,6 @@
         }
     });
 
-    // ── Person helpers ─────────────────────────
     function activatePerson(btn) {
         btn.classList.remove('btn-outline-primary');
         btn.classList.add('active');
@@ -534,7 +239,6 @@
         btn.classList.remove('active');
     }
 
-    // ── Person click ───────────────────────────
     personBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             personBtns.forEach(deactivatePerson);
@@ -553,7 +257,6 @@
         });
     });
 
-    // ── Symptom click ──────────────────────────
     symptomBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (!selectedPerson) return;
@@ -568,7 +271,6 @@
         });
     });
 
-    // ── Helpers ────────────────────────────────
     function enableSymptomGrid() {
         noPersonHint.style.display = 'none';
         symptomBtns.forEach(b => b.removeAttribute('disabled'));

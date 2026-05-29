@@ -52,7 +52,15 @@
         <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <h6 class="fw-bold text-muted mb-2"><i class="bi bi-key me-2"></i>Report-ID</h6>
-                <div class="id-box" id="resId"></div>
+                <div class="id-box mb-3" id="resId"></div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a id="linkDay" href="#" class="btn btn-primary btn-sm">
+                        <i class="bi bi-cloud-sun me-1"></i>Tagesübersicht öffnen
+                    </a>
+                    <a id="linkReport" href="#" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-clipboard2-pulse me-1"></i>Symptome erfassen
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -175,6 +183,8 @@
             const d = await res.json();
 
             document.getElementById('resId').textContent          = d.id ?? '–';
+            document.getElementById('linkDay').href               = d.id ? '/day/' + d.id : '#';
+            document.getElementById('linkReport').href            = d.id ? '/report/' + d.id : '#';
             document.getElementById('resDate').textContent        = d.reportDate ?? '–';
             document.getElementById('resWeatherCode').textContent = val(d.weatherCode);
             document.getElementById('resTemp').textContent        = val(d.temperatureMax, ' °C') + ' / ' + val(d.temperatureMin, ' °C');
