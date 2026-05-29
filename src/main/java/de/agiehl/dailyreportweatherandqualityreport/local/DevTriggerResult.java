@@ -19,7 +19,8 @@ record DevTriggerResult(
         Double grassPollen,
         Double mugwortPollen,
         Double olivePollen,
-        Double ragweedPollen
+        Double ragweedPollen,
+        Integer europeanAqi
 ) {
     static DevTriggerResult from(DailyReport report) {
         return new DevTriggerResult(
@@ -39,7 +40,8 @@ record DevTriggerResult(
                 report.getGrassPollen(),
                 report.getMugwortPollen(),
                 report.getOlivePollen(),
-                report.getRagweedPollen()
+                report.getRagweedPollen(),
+                report.getEuropeanAqi()
         );
     }
 }

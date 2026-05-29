@@ -43,14 +43,15 @@ public class DailyReportService {
         report.setSunrise(extractTime(firstStr(daily.sunrise())));
         report.setSunset(extractTime(firstStr(daily.sunset())));
 
-        PollenApiResponse.DailyPollen pollen0 = pollen.daily();
-        if (pollen0 != null) {
-            report.setAlderPollen(firstDouble(pollen0.alderPollen()));
-            report.setBirchPollen(firstDouble(pollen0.birchPollen()));
-            report.setGrassPollen(firstDouble(pollen0.grassPollen()));
-            report.setMugwortPollen(firstDouble(pollen0.mugwortPollen()));
-            report.setOlivePollen(firstDouble(pollen0.olivePollen()));
-            report.setRagweedPollen(firstDouble(pollen0.ragweedPollen()));
+        PollenApiResponse.Hourly hourly = pollen.hourly();
+        if (hourly != null) {
+            report.setAlderPollen(maxDouble(hourly.alderPollen()));
+            report.setBirchPollen(maxDouble(hourly.birchPollen()));
+            report.setGrassPollen(maxDouble(hourly.grassPollen()));
+            report.setMugwortPollen(maxDouble(hourly.mugwortPollen()));
+            report.setOlivePollen(maxDouble(hourly.olivePollen()));
+            report.setRagweedPollen(maxDouble(hourly.ragweedPollen()));
+            report.setEuropeanAqi(maxInt(hourly.europeanAqi()));
         }
 
         return repository.save(report);
@@ -83,6 +84,22 @@ public class DailyReportService {
 
     private String firstStr(List<String> list) {
         return (list != null && !list.isEmpty()) ? list.get(0) : null;
+    }
+
+    private Double maxDouble(List<Double> list) {
+        if (list == null) return null;
+        return list.stream()
+                .filter(java.util.Objects::nonNull)
+                .max(Double::compareTo)
+                .orElse(null);
+    }
+
+    private Integer maxInt(List<Integer> list) {
+        if (list == null) return null;
+        return list.stream()
+                .filter(java.util.Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(null);
     }
 
     private String extractTime(String isoDateTime) {

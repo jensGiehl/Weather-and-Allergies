@@ -1,6 +1,7 @@
 package de.agiehl.dailyreportweatherandqualityreport.web;
 
 import de.agiehl.dailyreportweatherandqualityreport.domain.*;
+import de.agiehl.dailyreportweatherandqualityreport.report.EuropeanAqiLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.PollenLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.UvIndexLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.WeatherCondition;
@@ -33,9 +34,15 @@ public class ExportController {
         return new ExportData(
                 report.getReportDate(),
                 toWeather(report),
+                toAirQuality(report),
                 toPollenList(report),
                 toEntries(report)
         );
+    }
+
+    private ExportData.AirQuality toAirQuality(DailyReport report) {
+        EuropeanAqiLevel level = EuropeanAqiLevel.fromValue(report.getEuropeanAqi());
+        return new ExportData.AirQuality(report.getEuropeanAqi(), level.name(), level.getLabel());
     }
 
     private ExportData.Weather toWeather(DailyReport report) {

@@ -3,6 +3,7 @@ package de.agiehl.dailyreportweatherandqualityreport.web;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.agiehl.dailyreportweatherandqualityreport.domain.*;
+import de.agiehl.dailyreportweatherandqualityreport.report.EuropeanAqiLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.PollenLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.UvIndexLevel;
 import de.agiehl.dailyreportweatherandqualityreport.report.WeatherCondition;
@@ -51,6 +52,8 @@ public class ReportController {
         model.addAttribute("uvLevel", UvIndexLevel.fromValue(report.getUvIndexMax()));
         model.addAttribute("sunrise", nullSafe(report.getSunrise()));
         model.addAttribute("sunset", nullSafe(report.getSunset()));
+        model.addAttribute("europeanAqi", formatAqiValue(report.getEuropeanAqi()));
+        model.addAttribute("europeanAqiLevel", EuropeanAqiLevel.fromValue(report.getEuropeanAqi()));
         model.addAttribute("pollenEntries", buildPollenEntries(report));
         model.addAttribute("persons", personLoader.getPersons());
         model.addAttribute("symptoms", symptomLoader.getSymptoms());
@@ -88,6 +91,10 @@ public class ReportController {
 
     private String formatUvValue(Double value) {
         return value != null ? String.format(Locale.GERMAN, "%.1f", value) : "–";
+    }
+
+    private String formatAqiValue(Integer value) {
+        return value != null ? value.toString() : "–";
     }
 
     private String nullSafe(String value) {

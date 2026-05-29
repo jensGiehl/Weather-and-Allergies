@@ -37,5 +37,7 @@ public class DailyReport implements Persistable<String> {
     private Double olivePollen;
     private Double ragweedPollen;
 
+    private Integer europeanAqi;
+
     private LocalDateTime createdAt;
 }

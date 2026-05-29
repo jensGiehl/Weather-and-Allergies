@@ -28,7 +28,7 @@ public class PollenClient {
 
     public PollenApiResponse fetchTodayPollen() throws IOException, InterruptedException {
         URI uri = buildUri();
-        log.info("Fetching pollen from: {}", uri);
+        log.info("Fetching air quality from: {}", uri);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
@@ -37,7 +37,7 @@ public class PollenClient {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        log.debug("Pollen API response status: {}", response.statusCode());
+        log.debug("Air quality API response status: {}", response.statusCode());
 
         return objectMapper.readValue(response.body(), PollenApiResponse.class);
     }
@@ -46,7 +46,7 @@ public class PollenClient {
         String url = pollenProperties.apiUrl()
                 + "?latitude=" + weatherProperties.latitude()
                 + "&longitude=" + weatherProperties.longitude()
-                + "&daily=" + pollenProperties.dailyVariables()
+                + "&hourly=" + pollenProperties.hourlyVariables()
                 + "&timezone=" + weatherProperties.timezone()
                 + "&forecast_days=1";
         return URI.create(url);

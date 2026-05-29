@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
+import java.util.Objects;
 
 import static java.util.Locale.GERMAN;
 
@@ -26,10 +26,12 @@ public class ReportFormatter {
 
     public String format(WeatherApiResponse weather, PollenApiResponse pollen, String reportLink) {
         WeatherApiResponse.DailyWeather daily = weather.daily();
-        PollenApiResponse.DailyPollen dailyPollen = pollen.daily();
+        PollenApiResponse.Hourly hourly = pollen.hourly();
 
         WeatherCondition condition = resolveCondition(daily.weathercode());
         UvIndexLevel uvLevel = UvIndexLevel.fromValue(firstOf(daily.uvIndexMax()));
+        Integer aqiValue = maxInt(hourly != null ? hourly.europeanAqi() : null);
+        EuropeanAqiLevel aqiLevel = EuropeanAqiLevel.fromValue(aqiValue);
 
         StringBuilder sb = new StringBuilder();
 
@@ -56,14 +58,16 @@ public class ReportFormatter {
         sb.append("🌇 Untergang: ").append(formatTime(firstOfStr(daily.sunset()))).append(" Uhr\n");
 
         sb.append(DIVIDER).append("\n");
+        sb.append("🌫️ Luftqualität: ").append(formatAqi(aqiValue, aqiLevel)).append("\n");
+        sb.append(DIVIDER).append("\n");
         sb.append("🌿 Pollenflug heute\n\n");
 
-        sb.append("🌳 Erle:      ").append(PollenLevel.fromValue(firstOf(dailyPollen.alderPollen())).formatted()).append("\n");
-        sb.append("🌳 Birke:     ").append(PollenLevel.fromValue(firstOf(dailyPollen.birchPollen())).formatted()).append("\n");
-        sb.append("🌾 Gras:      ").append(PollenLevel.fromValue(firstOf(dailyPollen.grassPollen())).formatted()).append("\n");
-        sb.append("🌿 Beifuß:    ").append(PollenLevel.fromValue(firstOf(dailyPollen.mugwortPollen())).formatted()).append("\n");
-        sb.append("🫒 Olive:     ").append(PollenLevel.fromValue(firstOf(dailyPollen.olivePollen())).formatted()).append("\n");
-        sb.append("🌼 Ambrosia:  ").append(PollenLevel.fromValue(firstOf(dailyPollen.ragweedPollen())).formatted()).append("\n");
+        sb.append("🌳 Erle:      ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.alderPollen() : null)).formatted()).append("\n");
+        sb.append("🌳 Birke:     ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.birchPollen() : null)).formatted()).append("\n");
+        sb.append("🌾 Gras:      ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.grassPollen() : null)).formatted()).append("\n");
+        sb.append("🌿 Beifuß:    ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.mugwortPollen() : null)).formatted()).append("\n");
+        sb.append("🫒 Olive:     ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.olivePollen() : null)).formatted()).append("\n");
+        sb.append("🌼 Ambrosia:  ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.ragweedPollen() : null)).formatted()).append("\n");
 
         sb.append(DIVIDER).append("\n");
         sb.append("📋 Symptome erfassen:\n");
@@ -102,6 +106,11 @@ public class ReportFormatter {
         return String.format(GERMAN, "%.1f (%s)", value, level.formatted());
     }
 
+    private String formatAqi(Integer value, EuropeanAqiLevel level) {
+        if (value == null) return "–";
+        return value + " (" + level.formatted() + ")";
+    }
+
     private String formatTime(String isoDateTime) {
         if (isoDateTime == null || !isoDateTime.contains("T")) return "–";
         return isoDateTime.substring(isoDateTime.indexOf("T") + 1);
@@ -117,5 +126,15 @@ public class ReportFormatter {
 
     private String firstOfStr(List<String> list) {
         return (list != null && !list.isEmpty()) ? list.getFirst() : null;
+    }
+
+    private Double maxOf(List<Double> list) {
+        if (list == null) return null;
+        return list.stream().filter(Objects::nonNull).max(Double::compareTo).orElse(null);
+    }
+
+    private Integer maxInt(List<Integer> list) {
+        if (list == null) return null;
+        return list.stream().filter(Objects::nonNull).max(Integer::compareTo).orElse(null);
     }
 }

@@ -7,9 +7,16 @@ import java.util.List;
 public record ExportData(
         LocalDate date,
         Weather weather,
+        AirQuality airQuality,
         List<Pollen> pollen,
         List<Entry> entries
 ) {
+    public record AirQuality(
+            Integer europeanAqi,
+            String level,
+            String label
+    ) {}
+
     public record Weather(
             Integer code,
             String label,
