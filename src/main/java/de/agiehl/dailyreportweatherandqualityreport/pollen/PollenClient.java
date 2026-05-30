@@ -37,9 +37,14 @@ public class PollenClient {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        log.debug("Air quality API response status: {}", response.statusCode());
+        log.info("Air quality API response status: {}", response.statusCode());
 
-        return objectMapper.readValue(response.body(), PollenApiResponse.class);
+        try {
+            return objectMapper.readValue(response.body(), PollenApiResponse.class);
+        } catch (Exception ex) {
+            log.error("Failed to parse air quality API response: {}", response.body(), ex);
+            throw ex;
+        }
     }
 
     private URI buildUri() {

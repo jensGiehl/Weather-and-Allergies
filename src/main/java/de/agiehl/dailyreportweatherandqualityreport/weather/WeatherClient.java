@@ -35,9 +35,14 @@ public class WeatherClient {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        log.debug("Weather API response status: {}", response.statusCode());
+        log.info("Weather API response status: {}", response.statusCode());
 
-        return objectMapper.readValue(response.body(), WeatherApiResponse.class);
+        try {
+            return objectMapper.readValue(response.body(), WeatherApiResponse.class);
+        } catch (Exception ex) {
+            log.error("Failed to parse weather API response: {}", response.body(), ex);
+            throw ex;
+        }
     }
 
     private URI buildUri() {
