@@ -16,6 +16,11 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+import static java.time.format.DateTimeFormatter.ISO_DATE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -38,7 +43,8 @@ public class DailyReportSender {
         dailyReportService.updateWeatherAndPollen(report.getId(), weather, pollen);
 
         String reportLink = appProperties.baseUrl() + "/report/" + report.getId();
-        String message = reportFormatter.format(weather, pollen, reportLink);
+        String detailLog = appProperties.baseUrl() + "/day/" + LocalDate.now().format(ISO_DATE);
+        String message = reportFormatter.format(weather, pollen, reportLink, detailLog);
         telegramClient.sendMessage(message);
         log.info("Daily report sent successfully, id={}", report.getId());
     }

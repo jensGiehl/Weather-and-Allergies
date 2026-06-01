@@ -24,7 +24,7 @@ public class ReportFormatter {
 
     private final WeatherProperties weatherProperties;
 
-    public String format(WeatherApiResponse weather, PollenApiResponse pollen, String reportLink) {
+    public String format(WeatherApiResponse weather, PollenApiResponse pollen, String reportLink, String detailLink) {
         WeatherApiResponse.DailyWeather daily = weather.daily();
         PollenApiResponse.Hourly hourly = pollen.hourly();
 
@@ -68,6 +68,11 @@ public class ReportFormatter {
         sb.append("🌿 Beifuß:    ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.mugwortPollen() : null)).formatted()).append("\n");
         sb.append("🫒 Olive:     ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.olivePollen() : null)).formatted()).append("\n");
         sb.append("🌼 Ambrosia:  ").append(PollenLevel.fromValue(maxOf(hourly != null ? hourly.ragweedPollen() : null)).formatted()).append("\n");
+
+        sb.append(DIVIDER).append("\n");
+        sb.append("🔍 Details:\n");
+        sb.append(detailLink);
+        sb.append("\n\n");
 
         sb.append(DIVIDER).append("\n");
         sb.append("📋 Symptome erfassen:\n");

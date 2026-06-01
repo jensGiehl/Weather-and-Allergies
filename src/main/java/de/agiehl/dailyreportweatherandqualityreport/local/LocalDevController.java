@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
+import static java.time.format.DateTimeFormatter.ISO_DATE;
+
 @Controller
 @Profile("local")
 @RequiredArgsConstructor
@@ -53,7 +55,8 @@ class LocalDevController {
         DailyReport updated = dailyReportService.updateWeatherAndPollen(report.getId(), weather, pollen);
 
         String reportLink = appProperties.baseUrl() + "/report/" + updated.getId();
-        String telegramMessage = reportFormatter.format(weather, pollen, reportLink);
+        String detailLog = appProperties.baseUrl() + "/day/" + LocalDate.now().format(ISO_DATE);
+        String telegramMessage = reportFormatter.format(weather, pollen, reportLink, detailLog);
         return DevTriggerResult.from(updated, telegramMessage);
     }
 
