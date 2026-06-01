@@ -44,6 +44,7 @@ public class ReportFormatter {
         sb.append("🌡️ Temperatur\n");
         sb.append("   ↑ ").append(formatTemp(firstOf(daily.temperatureMax())));
         sb.append("  |  ↓ ").append(formatTemp(firstOf(daily.temperatureMin()))).append("\n\n");
+        sb.append(eightAmTemperatur(weather.hourly()));
 
         sb.append("🌧️ Niederschlag\n");
         sb.append("   Menge: ").append(formatMm(firstOf(daily.precipitationSum())));
@@ -79,6 +80,16 @@ public class ReportFormatter {
         sb.append(reportLink);
 
         return sb.toString();
+    }
+
+    private String eightAmTemperatur(WeatherApiResponse.HourlyWeather hourly) {
+        if (hourly == null || hourly.temperature() == null || hourly.temperature().size() < 8) {
+            return "";
+        }
+
+        Double temperatureAt8Am = hourly.temperature().get(8);
+
+        return "🕑 Temperatur um 8 Uhr: %s\n\n".formatted(formatTemp(temperatureAt8Am));
     }
 
     private String formatDate() {
