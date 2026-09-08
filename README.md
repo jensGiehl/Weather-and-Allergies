@@ -21,6 +21,8 @@ Every **Sunday at 20:00 (Europe/Berlin)** an additional **weekly summary** is se
 - Persons without any entries that week are omitted to keep the message short
 - A link back to the overview page
 
+Die tägliche Telegram-Nachricht enthält die Uhrzeit der Höchsttemperatur aus der Stundenprognose sowie die Temperaturen um **8, 12 und 14 Uhr**, jeweils mit einem Wetter-Emoji für diese Stunde. Alle Uhrzeiten beziehen sich auf `weather.timezone`. Bei gleicher Höchsttemperatur wird die erste Stunde angezeigt. Fehlende Stundenwerte erscheinen als `–`, fehlende Wettercodes als `❓`.
+
 ### Web UI
 
 | Page | URL | Description |
@@ -140,6 +142,7 @@ weather.timezone=Europe/Berlin
 weather.api-url=https://api.open-meteo.com/v1/forecast
 weather.daily-variables=temperature_2m_max,temperature_2m_min,precipitation_sum,\
   precipitation_probability_max,windspeed_10m_max,weathercode,uv_index_max,sunrise,sunset
+weather.hourly-variables=temperature_2m,weather_code
 
 # ── Open-Meteo Air Quality API (pollen) ─────────────
 pollen.api-url=https://air-quality-api.open-meteo.com/v1/air-quality
@@ -198,6 +201,78 @@ Edit `src/main/resources/symptoms.json`. Icons are [Bootstrap Icons](https://ico
 ```
 
 The app starts on **port 8080**. The scheduler fires automatically at 07:00 Berlin time.
+
+---
+
+## Docker und GitHub Actions
+
+Das [Dockerfile](Dockerfile) baut mit Maven und Java 25 ein Spring-Boot-JAR und übernimmt dessen Schichten in ein Java-25-JRE-Image. Die Anwendung läuft als Benutzer `spring` (UID/GID `10001`) auf Port `8080`. Der Healthcheck prüft alle 30 Sekunden, ob der HTTP-Port Verbindungen annimmt.
+
+Die [GitHub Action](.github/workflows/ci.yml) läuft bei jedem Push auf **`main` oder `master`**. Nach erfolgreichem Maven-Build inklusive Tests baut sie das Docker-Image und veröffentlicht es in der **GitHub Container Registry (GHCR)**:
+
+```text
+ghcr.io/jensgiehl/weather-and-allergies:latest
+ghcr.io/jensgiehl/weather-and-allergies:main
+ghcr.io/jensgiehl/weather-and-allergies:master
+ghcr.io/jensgiehl/weather-and-allergies:sha-<vollständiger-commit-sha>
+```
+
+Pro Lauf werden `latest`, der jeweilige Branch-Tag und der Commit-Tag veröffentlicht. `latest` zeigt auf den zuletzt erfolgreich veröffentlichten Build aus einem der beiden Branches. Die Anmeldung erfolgt mit dem automatisch bereitgestellten `GITHUB_TOKEN`; der Publish-Job erhält dafür `packages: write`. Ein zusätzliches Registry-Secret ist nicht erforderlich. Das bestehende SSH-Deployment läuft weiterhin ausschließlich bei Pushes auf `master`.
+
+### Container starten oder aktualisieren
+
+Lege auf dem Host eine Datei `weather.env` an und ersetze die Beispielwerte:
+
+```dotenv
+TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN
+TELEGRAM_CHAT_ID=YOUR_CHAT_ID
+APP_BASE_URL=https://your-domain.com
+WEATHER_LOCATION_NAME=Frankenthal
+WEATHER_LATITUDE=49.5366
+WEATHER_LONGITUDE=8.3483
+WEATHER_TIMEZONE=Europe/Berlin
+```
+
+`APP_BASE_URL` ist die vom Nutzer erreichbare Adresse für die Links in Telegram. Die Datei mit den Zugangsdaten gehört nicht ins Git-Repository und wird nicht in das Image kopiert.
+
+Beispiel für Bash auf dem Docker-Host:
+
+```bash
+docker rm -f weather-and-allergies 2>/dev/null
+
+docker run -d \
+  --name weather-and-allergies \
+  --pull=always \
+  -p 8089:8080 \
+  --restart unless-stopped \
+  --env-file ./weather.env \
+  -v weather-and-allergies-data:/app/data \
+  ghcr.io/jensgiehl/weather-and-allergies:latest
+```
+
+**8089 ist der Port am Host**, `8080` der Port im Container. Die Weboberfläche ist lokal unter `http://localhost:8089` erreichbar. Das benannte Volume `weather-and-allergies-data` speichert die H2-Datenbank dauerhaft unter `/app/data/allergydb.mv.db`; beim Ersetzen des Containers bleibt es erhalten.
+
+Alternativ lässt sich ein Host-Ordner einbinden. Bereite ihn unter Linux mit passenden Schreibrechten vor:
+
+```bash
+sudo mkdir -p /srv/weather-and-allergies/data
+sudo chown 10001:10001 /srv/weather-and-allergies/data
+```
+
+Ersetze dann die Volume-Zeile im Startbefehl durch `-v /srv/weather-and-allergies/data:/app/data`. Eine vorhandene H2-Datenbank kann bei gestoppter Anwendung in diesen Ordner übernommen werden.
+
+Ist das GHCR-Paket privat, melde dich auf dem Host vor dem Start mit `docker login ghcr.io -u DEIN_GITHUB_BENUTZERNAME` an und verwende einen Token mit `read:packages`. Für einen Start ohne Anmeldung stelle die Sichtbarkeit des Pakets in GitHub auf öffentlich.
+
+### Image lokal bauen
+
+```bash
+./mvnw --batch-mode --no-transfer-progress clean verify
+docker build -t weather-and-allergies:local .
+```
+
+Zum Starten des lokalen Images verwende im obigen Startbefehl `weather-and-allergies:local` und `--pull=never`. Im Docker-Build selbst werden Tests übersprungen; die GitHub Action führt sie vorher aus.
+
+Die Umsetzung orientiert sich an den offiziellen Anleitungen für [Spring-Boot-Image-Schichten](https://docs.spring.io/spring-boot/reference/packaging/container-images/dockerfiles.html) und [Docker-Publishing mit GitHub Actions](https://docs.docker.com/build/ci/github-actions/push-multi-registries/).
 
 ---
 

@@ -43,8 +43,9 @@ public class ReportFormatter {
 
         sb.append("🌡️ Temperatur\n");
         sb.append("   ↑ ").append(formatTemp(firstOf(daily.temperatureMax())));
+        sb.append(maxTemperatureTime(weather));
         sb.append("  |  ↓ ").append(formatTemp(firstOf(daily.temperatureMin()))).append("\n\n");
-        sb.append(eightAmTemperatur(weather.hourly()));
+        sb.append(hourlyTemperatures(weather));
 
         sb.append("🌧️ Niederschlag\n");
         sb.append("   Menge: ").append(formatMm(firstOf(daily.precipitationSum())));
@@ -82,14 +83,45 @@ public class ReportFormatter {
         return sb.toString();
     }
 
-    private String eightAmTemperatur(WeatherApiResponse.HourlyWeather hourly) {
-        if (hourly == null || hourly.temperature() == null || hourly.temperature().size() < 8) {
+    private String maxTemperatureTime(WeatherApiResponse weather) {
+        var hourly = weather.hourly();
+        String date = firstOfStr(weather.daily().time());
+        if (hourly == null || hourly.time() == null || date == null) {
             return "";
         }
 
-        Double temperatureAt8Am = hourly.temperature().get(8);
+        Double maximum = null;
+        String maximumTime = null;
+        for (int index = 0; index < hourly.time().size(); index++) {
+            String time = hourly.time().get(index);
+            Double temperature = valueAt(hourly.temperature(), index);
+            if (time != null && time.startsWith(date + "T") && temperature != null
+                    && (maximum == null || temperature > maximum)) {
+                maximum = temperature;
+                maximumTime = time;
+            }
+        }
+        return maximumTime == null ? "" : " um " + formatTime(maximumTime) + " Uhr";
+    }
 
-        return "🕑 Temperatur um 8 Uhr: %s\n\n".formatted(formatTemp(temperatureAt8Am));
+    private String hourlyTemperatures(WeatherApiResponse weather) {
+        var hourly = weather.hourly();
+        String date = firstOfStr(weather.daily().time());
+        StringBuilder result = new StringBuilder();
+        for (int hour : List.of(8, 12, 14)) {
+            int index = hourly != null && hourly.time() != null && date != null
+                    ? hourly.time().indexOf("%sT%02d:00".formatted(date, hour)) : -1;
+            Double temperature = hourly != null ? valueAt(hourly.temperature(), index) : null;
+            Integer code = hourly != null ? valueAt(hourly.weatherCode(), index) : null;
+            WeatherCondition condition = code != null ? WeatherCondition.fromCode(code) : WeatherCondition.UNKNOWN;
+            result.append("   Temperatur um %d Uhr: %s %s\n"
+                    .formatted(hour, formatTemp(temperature), condition.getEmoji()));
+        }
+        return result.append("\n").toString();
+    }
+
+    private <T> T valueAt(List<T> values, int index) {
+        return values != null && index >= 0 && index < values.size() ? values.get(index) : null;
     }
 
     private String formatDate() {

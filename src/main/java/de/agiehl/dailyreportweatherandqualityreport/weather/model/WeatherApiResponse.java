@@ -25,6 +25,7 @@ public record WeatherApiResponse(
 
     public record HourlyWeather(
             @JsonProperty("time") List<String> time,
-            @JsonProperty("temperature_2m") List<Double> temperature
+            @JsonProperty("temperature_2m") List<Double> temperature,
+            @JsonProperty("weather_code") List<Integer> weatherCode
     ) {}
 }
