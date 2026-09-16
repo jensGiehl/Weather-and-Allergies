@@ -4,5 +4,7 @@
 !.mvn/**
 !mvnw
 !pom.xml
+!.git/
+!.git/**
 !src/
 !src/**

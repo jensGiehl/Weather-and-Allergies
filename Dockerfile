@@ -5,6 +5,7 @@ WORKDIR /workspace
 
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
+COPY .git/ .git/
 RUN sed -i 's/\r$//' mvnw && chmod +x mvnw \
     && ./mvnw --batch-mode --no-transfer-progress dependency:go-offline
 

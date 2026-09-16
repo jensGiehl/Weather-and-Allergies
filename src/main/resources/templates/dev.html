@@ -198,6 +198,10 @@
     </div>
 </div>
 
+<footer class="text-center text-muted py-3" style="font-size:0.75rem">
+    <small th:text="'Version: ' + ${commitId}">Version: lokal</small>
+</footer>
+
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:inline="none">
     const btn       = document.getElementById('triggerBtn');

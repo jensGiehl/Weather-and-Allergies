@@ -208,6 +208,8 @@ The app starts on **port 8080**. The scheduler fires automatically at 07:00 Berl
 
 Das [Dockerfile](Dockerfile) baut mit Maven und Java 25 ein Spring-Boot-JAR und übernimmt dessen Schichten in ein Java-25-JRE-Image. Die Anwendung läuft als Benutzer `spring` (UID/GID `10001`) auf Port `8080`. Der Healthcheck prüft alle 30 Sekunden, ob der HTTP-Port Verbindungen annimmt.
 
+Im Footer der Weboberfläche steht die kurze Git-Commit-ID des Builds. Maven schreibt sie beim Paketieren in das JAR; ohne Git-Metadaten erscheint `lokal`.
+
 Die [GitHub Action](.github/workflows/ci.yml) läuft bei jedem Push auf **`main` oder `master`**. Nach erfolgreichem Maven-Build inklusive Tests baut sie das Docker-Image und veröffentlicht es in der **GitHub Container Registry (GHCR)**:
 
 ```text
@@ -221,21 +223,7 @@ Pro Lauf werden `latest`, der jeweilige Branch-Tag und der Commit-Tag veröffent
 
 ### Container starten oder aktualisieren
 
-Lege auf dem Host eine Datei `weather.env` an und ersetze die Beispielwerte:
-
-```dotenv
-TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN
-TELEGRAM_CHAT_ID=YOUR_CHAT_ID
-APP_BASE_URL=https://your-domain.com
-WEATHER_LOCATION_NAME=Frankenthal
-WEATHER_LATITUDE=49.5366
-WEATHER_LONGITUDE=8.3483
-WEATHER_TIMEZONE=Europe/Berlin
-```
-
-`APP_BASE_URL` ist die vom Nutzer erreichbare Adresse für die Links in Telegram. Die Datei mit den Zugangsdaten gehört nicht ins Git-Repository und wird nicht in das Image kopiert.
-
-Beispiel für Bash auf dem Docker-Host:
+Ersetze im folgenden Bash-Beispiel die Zugangsdaten und die Adresse. `APP_BASE_URL` ist die vom Nutzer erreichbare Adresse für die Links in Telegram.
 
 ```bash
 docker rm -f weather-and-allergies 2>/dev/null
@@ -245,7 +233,13 @@ docker run -d \
   --pull=always \
   -p 8089:8080 \
   --restart unless-stopped \
-  --env-file ./weather.env \
+  -e TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN \
+  -e TELEGRAM_CHAT_ID=YOUR_CHAT_ID \
+  -e APP_BASE_URL=https://your-domain.com \
+  -e WEATHER_LOCATION_NAME=Frankenthal \
+  -e WEATHER_LATITUDE=49.5366 \
+  -e WEATHER_LONGITUDE=8.3483 \
+  -e WEATHER_TIMEZONE=Europe/Berlin \
   -v weather-and-allergies-data:/app/data \
   ghcr.io/jensgiehl/weather-and-allergies:latest
 ```

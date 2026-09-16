@@ -262,7 +262,8 @@
 </div>
 
 <footer class="text-center text-muted py-3" style="font-size:0.75rem">
-    <i class="bi bi-cloud-check me-1"></i>Wetterdaten: Open-Meteo.com
+    <div><i class="bi bi-cloud-check me-1"></i>Wetterdaten: Open-Meteo.com</div>
+    <small th:text="'Version: ' + ${commitId}">Version: lokal</small>
 </footer>
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
