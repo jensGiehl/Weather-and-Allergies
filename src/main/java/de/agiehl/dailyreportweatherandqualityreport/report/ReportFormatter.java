@@ -23,6 +23,7 @@ public class ReportFormatter {
             DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", GERMAN);
 
     private final WeatherProperties weatherProperties;
+    private final SchoolClothingAdvisor schoolClothingAdvisor;
 
     public String format(WeatherApiResponse weather, PollenApiResponse pollen, String reportLink, String detailLink) {
         WeatherApiResponse.DailyWeather daily = weather.daily();
@@ -46,6 +47,9 @@ public class ReportFormatter {
         sb.append(maxTemperatureTime(weather));
         sb.append("  |  ↓ ").append(formatTemp(firstOf(daily.temperatureMin()))).append("\n\n");
         sb.append(hourlyTemperatures(weather));
+
+        sb.append("🧥 Kleidung für die Schule (8–14 Uhr)\n");
+        sb.append("   ").append(schoolClothingAdvisor.recommend(weather)).append("\n\n");
 
         sb.append("🌧️ Niederschlag\n");
         sb.append("   Menge: ").append(formatMm(firstOf(daily.precipitationSum())));

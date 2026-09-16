@@ -13,7 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ReportFormatterTests {
 
     private final ReportFormatter formatter = new ReportFormatter(
-            new WeatherProperties(52.52, 13.41, "Berlin", "Europe/Berlin", "", "", ""));
+            new WeatherProperties(52.52, 13.41, "Berlin", "Europe/Berlin", "", "", ""),
+            new SchoolClothingAdvisor());
 
     @Test
     void usesHourlyTimestampsAndConditionsAndFirstMaximumOfReportDay() {
@@ -33,7 +34,8 @@ class ReportFormatterTests {
     @Test
     void handlesMissingHourlyData() {
         assertThat(format(null)).contains("↑ 25,0 °C  |", "Temperatur um 8 Uhr: – ❓",
-                "Temperatur um 12 Uhr: – ❓", "Temperatur um 14 Uhr: – ❓");
+                "Temperatur um 12 Uhr: – ❓", "Temperatur um 14 Uhr: – ❓",
+                "Für 8–14 Uhr fehlen Stundenwerte");
     }
 
     @Test

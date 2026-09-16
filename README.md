@@ -21,7 +21,7 @@ Every **Sunday at 20:00 (Europe/Berlin)** an additional **weekly summary** is se
 - Persons without any entries that week are omitted to keep the message short
 - A link back to the overview page
 
-Die tägliche Telegram-Nachricht enthält die Uhrzeit der Höchsttemperatur aus der Stundenprognose sowie die Temperaturen um **8, 12 und 14 Uhr**, jeweils mit einem Wetter-Emoji für diese Stunde. Alle Uhrzeiten beziehen sich auf `weather.timezone`. Bei gleicher Höchsttemperatur wird die erste Stunde angezeigt. Fehlende Stundenwerte erscheinen als `–`, fehlende Wettercodes als `❓`.
+Die tägliche Telegram-Nachricht enthält die Uhrzeit der Höchsttemperatur aus der Stundenprognose sowie die Temperaturen um **8, 12 und 14 Uhr**, jeweils mit einem Wetter-Emoji für diese Stunde. Dazu kommt eine Kleidungsempfehlung für die Schule von **8 bis 14 Uhr**. Sie berücksichtigt die verfügbaren stündlichen Temperaturen in diesem Zeitraum, Temperaturunterschiede sowie Regen und Schnee. Fehlen Temperaturwerte für diesen Zeitraum, weist die Nachricht darauf hin. Alle Uhrzeiten beziehen sich auf `weather.timezone`. Bei gleicher Höchsttemperatur wird die erste Stunde angezeigt. Fehlende Stundenwerte erscheinen als `–`, fehlende Wettercodes als `❓`.
 
 ### Web UI
 
